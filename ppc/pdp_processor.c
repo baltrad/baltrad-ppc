@@ -272,7 +272,7 @@ static int PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(PolarScan_t*
   maxv = RaveData2D_max(data2d);
 
   spread = (maxv - minv) / 254;
-  fprintf(stderr, "minv = %f, maxv = %f, spread = %f\n", minv, maxv, spread);
+  //fprintf(stderr, "minv = %f, maxv = %f, spread = %f\n", minv, maxv, spread);
   offset = minv;
   gain = spread;
 
@@ -361,7 +361,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   double range = 0.0, rangeKm = 0.0;
   long nbins = 0, nrays = 0;
   long bi = 0, ri = 0;
-  double nodataPHIDP = 0.0;
+  double nodataPHIDP = 0.0, nodataTH = 0.0, nodataZDR = 0.0, nodataDV = 0.0, nodataRHOHV = 0.0;
   double flag = -999.9;
   double undetectTH = 0.0;
   RaveData2D_t *dataTH = NULL, *dataZDR = NULL, *dataDV = NULL, *texturePHIDP = NULL;
@@ -372,7 +372,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   RaveData2D_t *outAttenuationZ = NULL, *outAttenuationZDR = NULL, *outAttenuationPIA = NULL;
   RaveData2D_t *outZPHI = NULL, *outAH = NULL;
   RaveField_t* pdpQualityField = NULL;
-  PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *paramKDP = NULL, *paramRHOHV = NULL;
+  PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *paramKDP = NULL, *paramRHOHV = NULL, *correctedPDP = NULL;
   PolarNavigator_t* navigator = NULL;
 
   PolarScanParam_t *TH = NULL, *ZDR = NULL, *DV = NULL, *PHIDP = NULL, *RHOHV = NULL;
@@ -385,7 +385,6 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   navigator = PolarScan_getNavigator(scan);
 
   elangle = PolarScan_getElangle(scan);
-  //elangleDeg = elangle * 180.0/M_PI;
 
   range = PolarScan_getRscale(scan);
   rangeKm =  range / 1000.0;
@@ -408,40 +407,112 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   // IMPORTANT NOTE: The following command has to be applied until the
   //                 moment comuptation is corrected at RSP level
   dataPDP = RaveData2D_mulNumber(dataPHIDP, -1.0);
+
+  nodataPHIDP = self->nodata;
+  nodataTH = self->nodata;
+  nodataDV = self->nodata;
+  nodataZDR = self->nodata;
+  nodataRHOHV = self->nodata;
+  undetectTH = PolarScanParam_getUndetect(TH)*PolarScanParam_getGain(TH) + PolarScanParam_getOffset(TH);
+
+  for (bi = 0; bi < nbins; bi++) {
+    for (ri = 0; ri < nrays; ri++) {
+      double v;
+      RaveData2D_getValueUnchecked(dataTH, bi, ri, &v);
+      if (v < -20) {
+        RaveData2D_setValueUnchecked(dataTH, bi, ri, nodataTH);
+        RaveData2D_setValueUnchecked(dataZDR, bi, ri, nodataZDR);
+        RaveData2D_setValueUnchecked(dataPDP, bi, ri, nodataPHIDP);
+        RaveData2D_setValueUnchecked(dataPHIDP, bi, ri, nodataPHIDP);
+        RaveData2D_setValueUnchecked(dataRHOHV, bi, ri, nodataRHOHV);
+      }
+    }
+  }
+
   texturePHIDP = PdpProcessor_texture(self, dataPDP);
 
   textureZ = PdpProcessor_texture(self, dataTH);
+#ifdef KALLE
+  fprintf(stderr, "RAWPDP: ");
+  for (bi = 0; bi < RaveData2D_getXsize(dataPDP) && bi < 20; bi++) {
+    double v;
+    RaveData2D_getValueUnchecked(dataPDP, bi, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
 
-  nodataPHIDP = PolarScanParam_getNodata(PHIDP);
-  undetectTH = PolarScanParam_getUndetect(TH);
+  fprintf(stderr, "TH: ");
+  for (bi = 0; bi < RaveData2D_getXsize(dataTH) && bi < 20; bi++) {
+    double v;
+    RaveData2D_getValueUnchecked(dataTH, bi, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
 
+  fprintf(stderr, "DV: ");
+  for (bi = 0; bi < RaveData2D_getXsize(dataDV) && bi < 20; bi++) {
+    double v;
+    RaveData2D_getValueUnchecked(dataDV, bi, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+
+  fprintf(stderr, "texturePHIDP: ");
+  for (bi = 0; bi < RaveData2D_getXsize(texturePHIDP) && bi < 20; bi++) {
+    double v;
+    RaveData2D_getValueUnchecked(texturePHIDP, bi, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+
+  fprintf(stderr, "dataRHOHV: ");
+  for (bi = 0; bi < RaveData2D_getXsize(dataRHOHV) && bi < 20; bi++) {
+    double v;
+    RaveData2D_getValueUnchecked(dataRHOHV, bi, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+
+  fprintf(stderr, "textureZ: ");
+  for (bi = 0; bi < RaveData2D_getXsize(textureZ) && bi < 20; bi++) {
+    double v;
+    RaveData2D_getValueUnchecked(textureZ, bi, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+#endif
   /**************************************************************
    * Clutter removal by using a Fuzzy Logic Approach
    **************************************************************/
-  if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, clutterMap,
+  if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, dataPDP,
         PolarScanParam_getNodata(TH), PolarScanParam_getNodata(DV), self->qualityThreshold,
         &outZ, &outQuality, &outClutterMask)) {
     goto done;
   }
   RAVE_OBJECT_RELEASE(outZ); /* Not used in matlab */
+#ifdef KALLE
   fprintf(stderr, "thUndetect = %f\n", undetectTH);
+  fprintf(stderr, "Q = ");
+#endif
   for (bi = 0; bi < nbins; bi++) {
     for (ri = 0; ri < nrays; ri++) {
       double v = 0.0;
       RaveData2D_getValueUnchecked(outQuality, bi, ri, &v);
-      if (v < 0.6 /*self->qualityThreshold*/) {
+      if (ri == 20 && bi < 20) {
+        fprintf(stderr, "%f ", v);
+      }
+      if (v < 0.75 /*self->qualityThreshold*/) {
         RaveData2D_setValueUnchecked(dataTH, bi, ri, undetectTH);
-//        RaveData2D_setValueUnchecked(dataZDR, bi, ri, flag);
-//        RaveData2D_setValueUnchecked(dataPHIDP, bi, ri, flag);
-//        RaveData2D_setValueUnchecked(dataPDP, bi, ri, flag);
-//        RaveData2D_setValueUnchecked(dataRHOHV, bi, ri, flag);
-      }/* else {
-        fprintf(stderr, "quality good enough at %ld, %ld\n", bi, ri);
-      }*/
+        RaveData2D_setValueUnchecked(dataZDR, bi, ri, nodataZDR);
+        RaveData2D_setValueUnchecked(dataPHIDP, bi, ri, nodataPHIDP);
+        RaveData2D_setValueUnchecked(dataPDP, bi, ri, nodataPHIDP);
+        RaveData2D_setValueUnchecked(dataRHOHV, bi, ri, nodataRHOHV);
+      }
     }
   }
-
-  //fprintf(stderr, "data2d=%s\n", RaveData2D_str(dataTH));
+#ifdef KALLE
+  fprintf(stderr, "\n");
+#endif
 
   /**************************************************************
    * MEDIAN FILTERING TO REMOVE RESIDUAL ISOLATED PIXELS AFFECTED BY CLUTTER
@@ -451,12 +522,24 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
+#ifdef KALLE
+  fprintf(stderr, "Residualmask: ");
+  for (bi = 0; bi < nbins; bi++) {
+    double v = 0.0;
+    RaveData2D_getValueUnchecked(residualClutterMask, bi, 359, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+#endif
   /**************************************************************
    * PHIDP Filtering and Kdp retrieval
    **************************************************************/
+
   if (!PdpProcessor_pdpScript(self, dataPDP, rangeKm, self->pdpRWin1, self->pdpRWin2, self->pdpNrIterations, &outPDP, &outKDP)) {
     goto done;
   }
+
+  correctedPDP = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "PDP_CORR", 1, 255.0, 0.0);
 
   for (bi = 0; bi < nbins; bi++) {
     for (ri = 0; ri < nrays; ri++) {
@@ -518,7 +601,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
 
   RaveData2D_replace(residualClutterMask, RaveData2D_getNodata(residualClutterMask), 0.0);
 
-  fprintf(stderr, "residualClutterMask = %s\n", RaveData2D_str(residualClutterMask));
+  //fprintf(stderr, "residualClutterMask = %s\n", RaveData2D_str(residualClutterMask));
   correctedZ = PdpProcessorInternal_createPolarScanParamFromData2D(dataTH, "TH_CORR", 1, 255.0, 0.0);
   attenuatedZ = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZ, "CORR2_TH", 1, 255.0, 0.0);
   paramKDP =  PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "CORR_KDPH", 1, 255.0, 0.0);
@@ -530,6 +613,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
       !PolarScan_addParameter(result, attenuatedZ) ||
       !PolarScan_addParameter(result, paramKDP) ||
       !PolarScan_addParameter(result, paramRHOHV) ||
+      !PolarScan_addParameter(result, correctedPDP)  ||
 //      !PolarScan_addParameter(result, correctedZDR) ||
 //      !PolarScan_addParameter(result, correctedZPHI) ||
       //!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(result, outQuality, "se.baltrad.ppc.clutter_correction") ||
@@ -571,6 +655,7 @@ done:
   RAVE_OBJECT_RELEASE(correctedZ);
   RAVE_OBJECT_RELEASE(correctedZDR);
   RAVE_OBJECT_RELEASE(correctedZPHI);
+  RAVE_OBJECT_RELEASE(correctedPDP);
   RAVE_OBJECT_RELEASE(attenuatedZ);
   RAVE_OBJECT_RELEASE(paramKDP);
   RAVE_OBJECT_RELEASE(paramRHOHV);
@@ -659,19 +744,17 @@ double PdpProcessor_getMeltingLayerBottomHeight(PolarScan_t* scan)
   return 2.463;
 }
 
+double internal_get(RaveData2D_t* f, long x, long y) {
+  double v;
+  RaveData2D_getValueUnchecked(f,  x,  y,  &v);
+  return v;
+}
+
 RaveData2D_t* PdpProcessor_texture(PdpProcessor_t* self, RaveData2D_t* X)
 {
   RaveData2D_t* result = NULL;
   RaveData2D_t* texture = NULL;
-  RaveData2D_t *sumWeight = NULL;
   RaveData2D_t *weight = NULL;
-  RaveData2D_t *weightmulcirc = NULL;
-  RaveData2D_t* circ1 = NULL;
-  RaveData2D_t* circ2 = NULL;
-  RaveData2D_t* sub1= NULL;
-  RaveData2D_t* pow1 = NULL;
-  RaveData2D_t* add1= NULL;
-  RaveData2D_t* mul1 = NULL;
   long xsize = 0, ysize = 0;
   long x, y;
   long i, j;
@@ -691,9 +774,8 @@ RaveData2D_t* PdpProcessor_texture(PdpProcessor_t* self, RaveData2D_t* X)
   ysize = RaveData2D_getYsize(X);
 
   texture = RaveData2D_zeros(xsize, ysize, RaveDataType_DOUBLE);
-  sumWeight = RaveData2D_zeros(xsize, ysize, RaveDataType_DOUBLE);
   weight = RaveData2D_zeros(xsize, ysize, RaveDataType_DOUBLE);
-  if (texture == NULL || sumWeight == NULL || weight == NULL) {
+  if (texture == NULL || weight == NULL) {
     RAVE_ERROR0("Allocation error when creating texture");
     goto done;
   }
@@ -709,65 +791,47 @@ RaveData2D_t* PdpProcessor_texture(PdpProcessor_t* self, RaveData2D_t* X)
     }
   }
 
-  for (i = -1; i <= 1; i++) {
-    for (j = -1; j <= 1; j++) {
-      if (i*i+j*j > 0.0) {
-        // Textture = Texture + Weight * circshift(weight, i, j)*(circshift(X,i,j)-X)^2
-        // Sum_weight = Sum_weight + Weight * circshift(weight,i, j);
-        circ1 = RaveData2D_circshift(weight, i, j);
-        circ2 = RaveData2D_circshift(X, i, j);
-        if (circ1 == NULL || circ2 == NULL)
-          goto done;
-        weightmulcirc = RaveData2D_emul(weight, circ1);
-        if (weightmulcirc == NULL)
-          goto done;
-        sub1 = RaveData2D_sub(circ2, X);
-        if (sub1 == NULL)
-          goto done;
-        pow1 = RaveData2D_powNumber(sub1, 2.0);
-        if (pow1 == NULL)
-          goto done;
-        RaveData2D_useNodata(weightmulcirc, 0); // Just to ensure we get same behaviour as matlab code (0 is multiplied with nodata or the like */
-        RaveData2D_useNodata(pow1, 0);
-        mul1 = RaveData2D_emul(weightmulcirc, pow1);
-        if (mul1 == NULL)
-          goto done;
-        add1 = RaveData2D_add(texture, mul1);
-        if (add1 == NULL)
-          goto done;
-        RAVE_OBJECT_RELEASE(texture);
-        texture = RAVE_OBJECT_COPY(add1);
-        RAVE_OBJECT_RELEASE(add1);
-
-        add1 = RaveData2D_add(sumWeight, weightmulcirc); // Sum weight = sum_weight + weight*circshift(weight)
-        RAVE_OBJECT_RELEASE(sumWeight);
-        sumWeight = RAVE_OBJECT_COPY(add1);
-
-        RAVE_OBJECT_RELEASE(circ1);
-        RAVE_OBJECT_RELEASE(circ2);
-        RAVE_OBJECT_RELEASE(sub1);
-        RAVE_OBJECT_RELEASE(pow1);
-        RAVE_OBJECT_RELEASE(mul1);
-        RAVE_OBJECT_RELEASE(weightmulcirc);
-        RAVE_OBJECT_RELEASE(add1);
-      }
-    }
-  }
-
   for (x = 0; x < xsize; x++) {
     for (y = 0; y < ysize; y++) {
-      double v = 0.0;
-      RaveData2D_getValue(sumWeight, x, y, &v);
-      if (v >= 3.0) {
-        double tv = 0.0;
-        RaveData2D_getValue(texture, x, y, &tv);
-        if (tv >= 0) {
-          RaveData2D_setValue(texture, x, y, sqrt(tv) / v);
+      double valueTexture = 0.0;
+      double valueSumWeight = 0.0;
+      for (j = 1; j >= -1; j--) {
+        for (i = 1; i >= -1; i--) {
+          long xi = (x + i)%xsize;
+          long yj = (y + j)%ysize;
+          double valueCircshiftWeight = 0.0;
+          double valueCircshiftX = 0.0;
+          double valueX = 0.0;
+          double valueWeight = 0.0;
+
+          if (i==0 && j==0) continue;
+
+          while (xi < 0) {
+            xi += xsize;
+          }
+          while (yj < 0) {
+            yj += ysize;
+          }
+
+          RAVE_ASSERT((xi >= 0 && xi <xsize && yj >= 0 && yj < ysize), "BAD PROGRAMMING");
+
+          RaveData2D_getValueUnchecked(weight, x, y, &valueWeight);
+          RaveData2D_getValueUnchecked(weight, xi, yj, &valueCircshiftWeight);
+          RaveData2D_getValueUnchecked(X, xi, yj, &valueCircshiftX);
+          RaveData2D_getValueUnchecked(X, x, y, &valueX);
+
+          valueTexture = valueTexture + valueWeight * valueCircshiftWeight * (valueCircshiftX - valueX)*(valueCircshiftX - valueX);
+          valueSumWeight = valueSumWeight + valueWeight * valueCircshiftWeight;
+        }
+      }
+      if (valueSumWeight >= 3.0) {
+        if (valueTexture >= 0) {
+          RaveData2D_setValueUnchecked(texture, x, y, sqrt(valueTexture) / valueSumWeight);
         } else {
-          RaveData2D_setValue(texture, x, y, nodata);
+          RaveData2D_setValueUnchecked(texture, x, y, nodata);
         }
       } else {
-        RaveData2D_setValue(texture, x, y, nodata);
+        RaveData2D_setValueUnchecked(texture, x, y, nodata);
       }
     }
   }
@@ -775,15 +839,7 @@ RaveData2D_t* PdpProcessor_texture(PdpProcessor_t* self, RaveData2D_t* X)
   result = RAVE_OBJECT_COPY(texture);
 done:
   RAVE_OBJECT_RELEASE(texture);
-  RAVE_OBJECT_RELEASE(sumWeight);
   RAVE_OBJECT_RELEASE(weight);
-  RAVE_OBJECT_RELEASE(circ1);
-  RAVE_OBJECT_RELEASE(circ2);
-  RAVE_OBJECT_RELEASE(sub1);
-  RAVE_OBJECT_RELEASE(pow1);
-  RAVE_OBJECT_RELEASE(mul1);
-  RAVE_OBJECT_RELEASE(weightmulcirc);
-  RAVE_OBJECT_RELEASE(add1);
   RaveData2D_useNodata(X, 1);
   return result;
 }
@@ -1229,8 +1285,6 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
   RaveData2D_setNodata(kdpres, -999.0);
   RaveData2D_useNodata(kdpres, 1);
 
-  fprintf(stderr, "Window size: %f\n", window);
-
   if (pdpres == NULL || kdpres == NULL) {
     goto done;
   }
@@ -1431,6 +1485,24 @@ int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, d
       goto done;
     }
   }
+
+#ifdef KALLE
+  fprintf(stderr, "\nPDP: ");
+  for (x = 0; x < xsize; x++) {
+    double v;
+    RaveData2D_getValueUnchecked(pdp, x, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+
+  fprintf(stderr, "\nPDPRES: ");
+  for (x = 0; x < xsize; x++) {
+    double v;
+    RaveData2D_getValueUnchecked(pdpres, x, 20, &v);
+    fprintf(stderr, "%f ", v);
+  }
+  fprintf(stderr, "\n");
+#endif
 
   *pdpf = RAVE_OBJECT_COPY(pdpres);
   *kdp = RAVE_OBJECT_COPY(kdpres);

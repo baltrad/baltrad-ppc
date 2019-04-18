@@ -38,7 +38,6 @@ class PyPdpProcessorTest(unittest.TestCase):
     if os.path.isfile(self.TEMPORARY_FILE2):
      os.unlink(self.TEMPORARY_FILE2)  
 
-  A="""
   def testNew(self):
     a = _pdpprocessor.new()
     self.assertNotEqual(-1, str(type(a)).find("PdpProcessor"))
@@ -114,6 +113,32 @@ class PyPdpProcessorTest(unittest.TestCase):
       for j in range(4):
         self.assertAlmostEqual(result.getData()[i,j], expected[i,j], 3)        
 
+  def test_texture_vol_PHIDP(self):
+    a=_raveio.open(self.PVOL_TESTFILE)
+    processor = _pdpprocessor.new()
+    par = a.object.getScan(0).getParameter("PHIDP")
+    data = par.getData2D().emul(par.gain).add(par.offset).emul(-1.0)
+    result = processor.texture(data)
+    expected = numpy.array([14.2319, 3.0310, 0.6113, 0.6835, 0.8277, 0.8824,
+                            0.9338, 0.7487, 0.7276, 0.6603, 0.4323, 0.8645,
+                            0.9170, 0.2496, 0.5853, 0.3057, 0.3529, 0.3057,
+                            0.3057, 0.4991], numpy.float64);
+    for i in range(expected.shape[0]):
+      self.assertAlmostEqual(result.getData()[20,i], expected[i], 3)  
+
+  def test_texture_vol_TH(self):
+    a=_raveio.open(self.PVOL_TESTFILE)
+    processor = _pdpprocessor.new()
+    par = a.object.getScan(0).getParameter("TH")
+    data = par.getData2D().emul(par.gain).add(par.offset)
+    result = processor.texture(data)
+    #print(result.getData()[20,0:20])
+    expected = numpy.array([18.3395, 6.0493, 0.5762, 0.7262, 1.4470,
+                            1.5424, 1.0861, 1.3905, 0.7552, 0.9763,
+                            0.9763, 1.5130, 1.0232, 1.0251, 1.0662,
+                            1.5194, 1.9425, 1.7689, 1.5811, 0.8339], numpy.float64)
+    for i in range(expected.shape[0]):
+      self.assertAlmostEqual(result.getData()[20,i], expected[i], 3)  
 
   def test_trap(self):
     processor = _pdpprocessor.new()
@@ -189,7 +214,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     result = processor.clutterID(Z, VRADH, texturePHIDP, RHOHV, textureZ, clutterMap, -9999.0, -9999.0)
     expected = numpy.array([ # Expected result is same as produced by matlab code
       [0.32800,   0.30600,   0.32400,   0.34200],
-      [0.36000,   0.36000,   0.36000,   0.36000],
+      [0.36000,   0.36000,   0.36000,   0.36000], 
       [0.36000,   0.36000,   0.36000,   0.36000],
       [0.34200,   0.32400,   0.30600,   0.32800]], numpy.float64)
     for i in range(4):
@@ -264,7 +289,6 @@ class PyPdpProcessorTest(unittest.TestCase):
                                       [8.0, 7.0, 6.0, 5.0],
                                       [4.0, 3.0, 2.0, 1.0]], numpy.float64))
     result = processor.medfilt(Z, -20.0, -999, (3, 3))
-    #print(str(result.getData()))
     
     expected = numpy.array([
       [-33,    2,    3,  -33],
@@ -288,7 +312,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     #print(str(result.getData()))
     
     expected = numpy.array([
-      [-1,    1,    1,  -1],
+      [-1,    1,    1,  -1], 
       [ 1,    1,    1,   1],
       [ 1,    1,    1,   1],
       [-1,    1,    1,  -1]], numpy.float64)
@@ -309,17 +333,17 @@ class PyPdpProcessorTest(unittest.TestCase):
     pdpf, kdpf = processor.pdpProcessing(pdp, 1.0, 1.0, 2)
 
     expected_pdpf = numpy.array([
-      [0.00000,   0.00000,   0.00000,   0.00000],
-      [0.62500,  -0.12500,  -0.87500,  -1.62500],
-      [0.50000,  -0.50000,  -1.50000,  -2.50000],
-      [0.50000,  -0.50000,  -1.50000,  -2.50000]], numpy.float64)
+      [0.0,  0.7500,  1.0000,  1.0000],
+      [0.0,  0.7500,  1.0000,  1.0000],
+      [0.0, -0.7500, -1.0000, -1.0000],
+      [0.0, -0.7500, -1.0000, -1.0000]], numpy.float64)
 
     expected_kdpf = numpy.array([
-      [ 0.00000,   0.00000,   0.00000,   0.00000],
-      [ 0.31250,  -0.06250,  -0.43750,  -0.81250],
-      [-0.06250,  -0.18750,  -0.31250,  -0.43750],
-      [ 0.00000,   0.00000,   0.00000,   0.00000]], numpy.float64)
-    
+      [0.0, 0.3750, 0.1250, 0.0],
+      [0.0, 0.3750, 0.1250, 0.0],
+      [0.0,-0.3750,-0.1250, 0.0],
+      [0.0,-0.3750,-0.1250, 0.0]], numpy.float64)
+   
     for i in range(4):
       for j in range(4):
         self.assertAlmostEqual(pdpf.getData()[i,j], expected_pdpf[i,j], 3)
@@ -338,18 +362,18 @@ class PyPdpProcessorTest(unittest.TestCase):
     pdpf, kdpf = processor.pdpScript(pdp, 1.0, 1.4, 1.0, 2)
 
     expected_pdpf = numpy.array([
-      [0.00000,   0.00000,   0.00000,   0.00000],
-      [0.62500,  -0.12500,  -0.87500,  -1.62500],
-      [0.50000,  -0.50000,  -1.50000,  -2.50000],
-      [0.50000,  -0.50000,  -1.50000,  -2.50000]], numpy.float64)
+      [0.0,  0.7500,  1.0000,  1.0000],
+      [0.0,  0.7500,  1.0000,  1.0000],
+      [0.0, -0.7500, -1.0000, -1.0000],
+      [0.0, -0.7500, -1.0000, -1.0000]], numpy.float64)
 
     expected_kdpf = numpy.array([
-      [ 0.00000,   0.00000,   0.00000,   0.00000],
-      [ 0.31250,  -0.06250,  -0.43750,  -0.81250],
-      [-0.06250,  -0.18750,  -0.31250,  -0.43750],
-      [ 0.00000,   0.00000,   0.00000,   0.00000]], numpy.float64)
+      [0.0, 0.3750, 0.1250, 0.0],
+      [0.0, 0.3750, 0.1250, 0.0],
+      [0.0,-0.3750,-0.1250, 0.0],
+      [0.0,-0.3750,-0.1250, 0.0]], numpy.float64)
     
-    for i in range(4):
+    for i in range(4): 
       for j in range(4):
         self.assertAlmostEqual(pdpf.getData()[i,j], expected_pdpf[i,j], 3)
         self.assertAlmostEqual(kdpf.getData()[i,j], expected_kdpf[i,j], 3)  
@@ -363,7 +387,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     zdr = _ravedata2d.new(numpy.array([[1.0, 2.0, 3.0, 4.0],
                                        [5.0, 6.0, 7.0, 8.0],
                                        [8.0, 7.0, 6.0, 5.0],
-                                       [4.0, 3.0, 2.0, 1.0]], numpy.float64))
+                                         [4.0, 3.0, 2.0, 1.0]], numpy.float64))
     pdp = _ravedata2d.new(numpy.array([[1.0, 2.0, 3.0, 4.0],
                                        [5.0, 6.0, 7.0, 8.0],
                                        [8.0, 7.0, 6.0, 5.0],
@@ -439,7 +463,7 @@ class PyPdpProcessorTest(unittest.TestCase):
       for j in range(4):
         self.assertAlmostEqual(zphi.getData()[i,j], expected_zphi[i,j], 3)
         self.assertAlmostEqual(ah.getData()[i,j], expected_ah[i,j], 3)  
-  """
+
   def test_process(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
@@ -447,6 +471,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     b = _raveio.new()
     b.object = result
     b.save("slask.h5")
+
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']
   unittest.main()
