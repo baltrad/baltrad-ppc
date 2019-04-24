@@ -42,6 +42,173 @@ class PyPdpProcessorTest(unittest.TestCase):
     a = _pdpprocessor.new()
     self.assertNotEqual(-1, str(type(a)).find("PdpProcessor"))
 
+  def testParametersUZ(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(0.0, a.parametersUZ[0], 3);
+    self.assertAlmostEqual(30.0, a.parametersUZ[1], 3);
+    self.assertAlmostEqual(90.0, a.parametersUZ[2], 3);
+    self.assertAlmostEqual(62.0, a.parametersUZ[3], 3);
+    self.assertAlmostEqual(20.0, a.parametersUZ[4], 3);
+    
+    a.parametersUZ = (1.0, 2.0, 3.0, 4.0, 5.0)
+    self.assertAlmostEqual(1.0, a.parametersUZ[0], 3);
+    self.assertAlmostEqual(2.0, a.parametersUZ[1], 3);
+    self.assertAlmostEqual(3.0, a.parametersUZ[2], 3);
+    self.assertAlmostEqual(4.0, a.parametersUZ[3], 3);
+    self.assertAlmostEqual(5.0, a.parametersUZ[4], 3);
+
+  def testParametersVEL(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(0.3, a.parametersVEL[0], 3);
+    self.assertAlmostEqual(-0.9, a.parametersVEL[1], 3);
+    self.assertAlmostEqual(0.9, a.parametersVEL[2], 3);
+    self.assertAlmostEqual(0.15, a.parametersVEL[3], 3);
+    self.assertAlmostEqual(0.15, a.parametersVEL[4], 3);
+    
+    a.parametersVEL = (1.0, 2.0, 3.0, 4.0, 5.0)
+    self.assertAlmostEqual(1.0, a.parametersVEL[0], 3);
+    self.assertAlmostEqual(2.0, a.parametersVEL[1], 3);
+    self.assertAlmostEqual(3.0, a.parametersVEL[2], 3);
+    self.assertAlmostEqual(4.0, a.parametersVEL[3], 3);
+    self.assertAlmostEqual(5.0, a.parametersVEL[4], 3);
+
+  def testParametersTEXT_PHIDP(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(0.8, a.parametersTEXT_PHIDP[0], 3);
+    self.assertAlmostEqual(15.0, a.parametersTEXT_PHIDP[1], 3);
+    self.assertAlmostEqual(40.0, a.parametersTEXT_PHIDP[2], 3);
+    self.assertAlmostEqual(5.0, a.parametersTEXT_PHIDP[3], 3);
+    self.assertAlmostEqual(40.0, a.parametersTEXT_PHIDP[4], 3);
+    
+    a.parametersTEXT_PHIDP = (1.0, 2.0, 3.0, 4.0, 5.0)
+    self.assertAlmostEqual(1.0, a.parametersTEXT_PHIDP[0], 3);
+    self.assertAlmostEqual(2.0, a.parametersTEXT_PHIDP[1], 3);
+    self.assertAlmostEqual(3.0, a.parametersTEXT_PHIDP[2], 3);
+    self.assertAlmostEqual(4.0, a.parametersTEXT_PHIDP[3], 3);
+    self.assertAlmostEqual(5.0, a.parametersTEXT_PHIDP[4], 3);
+
+  def testParametersRHV(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(0.2, a.parametersRHV[0], 3);
+    self.assertAlmostEqual(0.0, a.parametersRHV[1], 3);
+    self.assertAlmostEqual(0.6, a.parametersRHV[2], 3);
+    self.assertAlmostEqual(0.0, a.parametersRHV[3], 3);
+    self.assertAlmostEqual(0.1, a.parametersRHV[4], 3);
+    
+    a.parametersRHV = (1.0, 2.0, 3.0, 4.0, 5.0)
+    self.assertAlmostEqual(1.0, a.parametersRHV[0], 3);
+    self.assertAlmostEqual(2.0, a.parametersRHV[1], 3);
+    self.assertAlmostEqual(3.0, a.parametersRHV[2], 3);
+    self.assertAlmostEqual(4.0, a.parametersRHV[3], 3);
+    self.assertAlmostEqual(5.0, a.parametersRHV[4], 3);
+
+  def testParametersTEXT_UZ(self):
+    a = _pdpprocessor.new()
+    # DEFAULT_PAR_TEXT_UZ[5] =     {0.30,  20.00,  60.00,   5.00,  10.00 };
+    self.assertAlmostEqual(0.3, a.parametersTEXT_UZ[0], 3);
+    self.assertAlmostEqual(20.0, a.parametersTEXT_UZ[1], 3);
+    self.assertAlmostEqual(60.0, a.parametersTEXT_UZ[2], 3);
+    self.assertAlmostEqual(5.0, a.parametersTEXT_UZ[3], 3);
+    self.assertAlmostEqual(10.0, a.parametersTEXT_UZ[4], 3);
+    
+    a.parametersTEXT_UZ = (1.0, 2.0, 3.0, 4.0, 5.0)
+    self.assertAlmostEqual(1.0, a.parametersTEXT_UZ[0], 3);
+    self.assertAlmostEqual(2.0, a.parametersTEXT_UZ[1], 3);
+    self.assertAlmostEqual(3.0, a.parametersTEXT_UZ[2], 3);
+    self.assertAlmostEqual(4.0, a.parametersTEXT_UZ[3], 3);
+    self.assertAlmostEqual(5.0, a.parametersTEXT_UZ[4], 3);
+
+  def testParametersCLUTTER_MAP(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(0.9, a.parametersCLUTTER_MAP[0], 3);
+    self.assertAlmostEqual(5.0, a.parametersCLUTTER_MAP[1], 3);
+    self.assertAlmostEqual(70.0, a.parametersCLUTTER_MAP[2], 3);
+    self.assertAlmostEqual(20.0, a.parametersCLUTTER_MAP[3], 3);
+    self.assertAlmostEqual(60.0, a.parametersCLUTTER_MAP[4], 3);
+    
+    a.parametersCLUTTER_MAP = (1.0, 2.0, 3.0, 4.0, 5.0)
+    self.assertAlmostEqual(1.0, a.parametersCLUTTER_MAP[0], 3);
+    self.assertAlmostEqual(2.0, a.parametersCLUTTER_MAP[1], 3);
+    self.assertAlmostEqual(3.0, a.parametersCLUTTER_MAP[2], 3);
+    self.assertAlmostEqual(4.0, a.parametersCLUTTER_MAP[3], 3);
+    self.assertAlmostEqual(5.0, a.parametersCLUTTER_MAP[4], 3);
+
+  def testNodata(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(-999.0, a.nodata, 3)
+    a.nodata = 1
+    self.assertAlmostEqual(1.0, a.nodata, 3);
+
+  def testMinDBZ(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(-32.0, a.minDBZ, 3)
+    a.minDBZ = 1
+    self.assertAlmostEqual(1.0, a.minDBZ, 3);
+
+  def testQualityThreshold(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(0.75, a.qualityThreshold, 3)
+    a.qualityThreshold = 1
+    self.assertAlmostEqual(1.0, a.qualityThreshold, 3);
+
+  def testKdpUp(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(20.0, a.kdpUp, 3)
+    a.kdpUp = 1
+    self.assertAlmostEqual(1.0, a.kdpUp, 3);
+    
+  def testKdpDown(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    a.kdpDown = 1
+    self.assertAlmostEqual(1.0, a.kdpDown, 3);
+
+  def testKdpStdThreshold(self):
+    a = _pdpprocessor.new()
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+    a.kdpStdThreshold = 1
+    self.assertAlmostEqual(1.0, a.kdpStdThreshold, 3);
+
+  def testSetBand(self):
+    a = _pdpprocessor.new()
+    a.setBand('s')
+    self.assertAlmostEqual(14.0, a.kdpUp, 3)
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+    
+    a.setBand('c')
+    self.assertAlmostEqual(20.0, a.kdpUp, 3)
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+        
+    a.setBand('x')
+    self.assertAlmostEqual(40.0, a.kdpUp, 3)
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+
+  def testSetBand_invalid(self):
+    a = _pdpprocessor.new()
+    try:
+      a.setBand('y')
+      self.fail("Expected ValueError")
+    except ValueError:
+      pass
+      
+  def testRequestedFields(self):
+    a = _pdpprocessor.new()
+    
+    self.assertEqual(_pdpprocessor.P_CORR_ATT_TH | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK, a.requestedFields);
+    
+    a.requestedFields = _pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR
+
+    self.assertEqual(_pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR, a.requestedFields);
+
+    self.assertNotEqual(_pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR | _pdpprocessor.P_CORR_ZPHI, a.requestedFields)
+        
+    a.requestedFields = a.requestedFields | _pdpprocessor.P_CORR_ZPHI
+
+    self.assertEqual(_pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR | _pdpprocessor.P_CORR_ZPHI, a.requestedFields);
+
   def test_texture(self):
     processor = _pdpprocessor.new()
     data2d = _ravedata2d.new()
@@ -320,7 +487,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     for i in range(4):
       for j in range(4):
         self.assertAlmostEqual(result.getData()[i,j], expected[i,j], 3)
-  
+
   def testPdpProcessing_1(self):
     processor = _pdpprocessor.new()
     pdp = _ravedata2d.new(numpy.array([[1.0, 2.0, 3.0, 4.0],
@@ -330,7 +497,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     pdp.nodata = -999
     pdp.useNodata = True
     
-    pdpf, kdpf = processor.pdpProcessing(pdp, 1.0, 1.0, 2)
+    pdpf, kdpf = processor.pdpProcessing(pdp, 1.0, 1, 2)
 
     expected_pdpf = numpy.array([
       [0.0,  0.7500,  1.0000,  1.0000],
@@ -348,7 +515,7 @@ class PyPdpProcessorTest(unittest.TestCase):
       for j in range(4):
         self.assertAlmostEqual(pdpf.getData()[i,j], expected_pdpf[i,j], 3)
         self.assertAlmostEqual(kdpf.getData()[i,j], expected_kdpf[i,j], 3)
- 
+
   def testPdpScript_1(self):
     processor = _pdpprocessor.new()
     pdp = _ravedata2d.new(numpy.array([[1.0, 2.0, 3.0, 4.0],
@@ -464,14 +631,33 @@ class PyPdpProcessorTest(unittest.TestCase):
         self.assertAlmostEqual(zphi.getData()[i,j], expected_zphi[i,j], 3)
         self.assertAlmostEqual(ah.getData()[i,j], expected_ah[i,j], 3)  
 
-  def test_process(self):
+  #def test_process_CORR_KDP_CORR_ZPHI(self):
+  #  a=_raveio.open(self.PVOL_TESTFILE)
+  #  processor = _pdpprocessor.new()
+  #  result = processor.process(a.object.getScan(0))
+  #  b = _raveio.new()
+  #  b.object = result
+  #  b.save("slask.h5")
+
+  def test_process_CORR_KDP_CORR_ZPHI(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
+    processor.requestedFields = _pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_ZPHI  
     result = processor.process(a.object.getScan(0))
-    b = _raveio.new()
-    b.object = result
-    b.save("slask.h5")
+    self.assertFalse(result.hasParameter("CORR_TH"))
+    self.assertTrue(result.hasParameter("CORR_KDP"))
+    self.assertTrue(result.hasParameter("CORR_ZPHI"))
 
+  def test_process_CORR_TH_CORR_ZPHI(self):
+    a=_raveio.open(self.PVOL_TESTFILE)
+    processor = _pdpprocessor.new()
+    processor.requestedFields = _pdpprocessor.P_CORR_TH | _pdpprocessor.P_CORR_ZPHI  
+    result = processor.process(a.object.getScan(0))
+    self.assertTrue(result.hasParameter("CORR_TH"))
+    self.assertFalse(result.hasParameter("CORR_KDP"))
+    self.assertTrue(result.hasParameter("CORR_ZPHI"))
+    
+    
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']
   unittest.main()

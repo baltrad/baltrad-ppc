@@ -149,6 +149,24 @@ static PyObject* _pypdpprocessor_new(PyObject* self, PyObject* args)
   return (PyObject*)PyPdpProcessor_New(NULL);
 }
 
+static PyObject* _pypdpprocessor_setBand(PyPdpProcessor* self, PyObject* args)
+{
+  char* c;
+  if (!PyArg_ParseTuple(args, "s", &c))
+    return NULL;
+
+  if (strlen(c) != 1 ||
+      (c[0] != 's' && c[0] != 'c' && c[0] != 'x')) {
+    raiseException_returnNULL(PyExc_ValueError, "Band must be either s, c or x");
+  }
+
+  if (!PdpProcessor_setBand(self->processor, c[0])) {
+    raiseException_returnNULL(PyExc_RuntimeError, "Failure to set band");
+  }
+
+  Py_RETURN_NONE;
+}
+
 /**
  * See \ref PdpProcessor_texture
  * @param[in] self - self
@@ -356,10 +374,10 @@ static PyObject* _pypdpprocessor_pdpProcessing(PyPdpProcessor* self, PyObject* a
   RaveData2D_t* kdpres = NULL;
   PyObject* result = NULL;
   double dr;
-  double window;
+  long window;
   long nrIter;
 
-  if (!PyArg_ParseTuple(args, "Oddl", &pyinPdp, &dr, &window, &nrIter))
+  if (!PyArg_ParseTuple(args, "Odll", &pyinPdp, &dr, &window, &nrIter))
     return NULL;
 
   if (!PyRaveData2D_Check(pyinPdp)) {
@@ -510,6 +528,19 @@ done:
 static struct PyMethodDef _pypdpprocessor_methods[] =
 {
   {"minWindow", NULL},
+  {"parametersUZ", NULL},
+  {"parametersVEL", NULL},
+  {"parametersTEXT_PHIDP", NULL},
+  {"parametersRHV", NULL},
+  {"parametersTEXT_UZ", NULL},
+  {"parametersCLUTTER_MAP", NULL},
+  {"nodata", NULL},
+  {"minDBZ", NULL},
+  {"qualityThreshold", NULL},
+  {"kdpUp", NULL},
+  {"kdpDown", NULL},
+  {"kdpStdThreshold", NULL},
+  {"setBand", (PyCFunction)_pypdpprocessor_setBand, 1},
   {"texture", (PyCFunction)_pypdpprocessor_texture, 1},
   {"trap", (PyCFunction)_pypdpprocessor_trap, 1},
   {"clutterID", (PyCFunction)_pypdpprocessor_clutterID, 1},
@@ -531,7 +562,46 @@ static PyObject* _pypdpprocessor_getattro(PyPdpProcessor* self, PyObject* name)
 {
   if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
     return PyInt_FromLong(PdpProcessor_getMinWindow(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersUZ") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    PdpProcessor_getParametersUZ(self->processor, &weight, &X2, &X3, &delta1, &delta2);
+    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersVEL") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    PdpProcessor_getParametersVEL(self->processor, &weight, &X2, &X3, &delta1, &delta2);
+    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_PHIDP") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    PdpProcessor_getParametersTEXT_PHIDP(self->processor, &weight, &X2, &X3, &delta1, &delta2);
+    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersRHV") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    PdpProcessor_getParametersRHV(self->processor, &weight, &X2, &X3, &delta1, &delta2);
+    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_UZ") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    PdpProcessor_getParametersTEXT_UZ(self->processor, &weight, &X2, &X3, &delta1, &delta2);
+    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersCLUTTER_MAP") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    PdpProcessor_getParametersCLUTTER_MAP(self->processor, &weight, &X2, &X3, &delta1, &delta2);
+    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "nodata") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getNodata(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minDBZ") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getMinDBZ(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "qualityThreshold") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getQualityThreshold(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpUp") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getKdpUp(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpDown") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getKdpDown(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpStdThreshold") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getKdpStdThreshold(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "requestedFields") == 0) {
+    return PyLong_FromLong(PdpProcessor_getRequestedFields(self->processor));
   }
+
   return PyObject_GenericGetAttr((PyObject*)self, name);
 }
 
@@ -549,6 +619,104 @@ static int _pypdpprocessor_setattro(PyPdpProcessor* self, PyObject* name, PyObje
       PdpProcessor_setMinWindow(self->processor, PyLong_AsLong(val));
     } else {
       raiseException_gotoTag(done, PyExc_TypeError, "nodata must be of type int");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersUZ") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
+      goto done;
+    PdpProcessor_setParametersUZ(self->processor, weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersVEL") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
+      goto done;
+    PdpProcessor_setParametersVEL(self->processor, weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_PHIDP") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
+      goto done;
+    PdpProcessor_setParametersTEXT_PHIDP(self->processor, weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersRHV") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
+      goto done;
+    PdpProcessor_setParametersRHV(self->processor, weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_UZ") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
+      goto done;
+    PdpProcessor_setParametersTEXT_UZ(self->processor, weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersCLUTTER_MAP") == 0) {
+    double weight, X2, X3, delta1, delta2;
+    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
+      goto done;
+    PdpProcessor_setParametersCLUTTER_MAP(self->processor, weight, X2, X3, delta1, delta2);
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "nodata") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setNodata(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setNodata(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setNodata(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "nodata must be of type float or long");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minDBZ") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setMinDBZ(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setMinDBZ(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setMinDBZ(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "minDBZ must be of type float or long");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "qualityThreshold") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setQualityThreshold(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setQualityThreshold(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setQualityThreshold(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "qualityThreshold must be of type float or long");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpUp") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setKdpUp(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setKdpUp(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setKdpUp(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "kdpUp must be of type float or long");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpDown") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setKdpDown(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setKdpDown(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setKdpDown(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "kdpDown must be of type float or long");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpStdThreshold") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setKdpStdThreshold(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setKdpStdThreshold(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setKdpStdThreshold(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "kdpStdThreshold must be of type float or long");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "requestedFields") == 0) {
+    if (PyLong_Check(val)) {
+      PdpProcessor_setRequestedFields(self->processor, (int)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setRequestedFields(self->processor, (int)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "requestedFields must be of integer");
     }
   } else {
     raiseException_gotoTag(done, PyExc_AttributeError, PY_RAVE_ATTRO_NAME_TO_STRING(name));
@@ -617,6 +785,22 @@ static PyMethodDef functions[] = {
   {NULL,NULL} /*Sentinel*/
 };
 
+/**
+ * Adds constants to the dictionary (probably the modules dictionary).
+ * @param[in] dictionary - the dictionary the long should be added to
+ * @param[in] name - the name of the constant
+ * @param[in] value - the value
+ */
+static void add_long_constant(PyObject* dictionary, const char* name, long value)
+{
+  PyObject* tmp = NULL;
+  tmp = PyInt_FromLong(value);
+  if (tmp != NULL) {
+    PyDict_SetItemString(dictionary, name, tmp);
+  }
+  Py_XDECREF(tmp);
+}
+
 MOD_INIT(_pdpprocessor)
 {
   PyObject *module=NULL,*dictionary=NULL;
@@ -647,9 +831,21 @@ MOD_INIT(_pdpprocessor)
     return MOD_INIT_ERROR;
   }
 
+  add_long_constant(dictionary, "P_CORR_TH", PdpProcessor_CORR_TH);
+  add_long_constant(dictionary, "P_CORR_ATT_TH", PdpProcessor_CORR_ATT_TH);
+  add_long_constant(dictionary, "P_CORR_KDP", PdpProcessor_CORR_KDP);
+  add_long_constant(dictionary, "P_CORR_RHOHV", PdpProcessor_CORR_RHOHV);
+  add_long_constant(dictionary, "P_CORR_PHIDP", PdpProcessor_CORR_PHIDP);
+  add_long_constant(dictionary, "P_CORR_ZDR", PdpProcessor_CORR_ZDR);
+  add_long_constant(dictionary, "P_CORR_ZPHI", PdpProcessor_CORR_ZPHI);
+  add_long_constant(dictionary, "Q_QUALITY_RESIDUAL_CLUTTER_MASK", PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK);
+  add_long_constant(dictionary, "Q_QUALITY_ATTENUATION_MASK", PdpProcessor_QUALITY_ATTENUATION_MASK);
+
+
   import_pypolarscan();
   import_ravedata2d();
   PYRAVE_DEBUG_INITIALIZE;
   return MOD_INIT_SUCCESS(module);
 }
+
 /*@} End of Module setup */
