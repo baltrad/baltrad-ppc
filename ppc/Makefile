@@ -26,7 +26,7 @@
 
 # Ropo specific c flags
 #
-CFLAGS= -I. $(RAVE_MODULE_CFLAGS)
+CFLAGS= -I. $(RAVE_MODULE_CFLAGS) -std=c99
 
 # --------------------------------------------------------------------
 # Fixed definitions

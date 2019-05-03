@@ -401,7 +401,7 @@ RaveData2D_t* PdpProcessorInternal_getData2DFromParam(PolarScanParam_t* param, d
 /**
  * @returns the current time in milliseconds since epoch
  */
-static long long PdpProcessorInternal_timestamp() {
+static long long PdpProcessorInternal_timestamp(void) {
     struct timeval te;
     gettimeofday(&te, NULL);
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000;
