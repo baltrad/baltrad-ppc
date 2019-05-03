@@ -67,7 +67,7 @@ class ppc_quality_plugin(rave_quality_plugin):
           obj.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
           if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
             f = obj.getParameter("CORR_ATT_TH")
-            f.quantity = TH
+            f.quantity = "TH"
             obj.addParameter(f)
           
         elif _polarvolume.isPolarVolume(obj):
@@ -81,7 +81,7 @@ class ppc_quality_plugin(rave_quality_plugin):
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
             if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
               f = scan.getParameter("CORR_ATT_TH")
-              f.quantity = TH
+              f.quantity = "TH"
               scan.addParameter(f)
       except:
         logger.exception("Failed to generate baltrad-ppc field")
