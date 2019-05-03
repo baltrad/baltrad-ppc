@@ -1,22 +1,17 @@
 '''
-Created on Sep 1, 2011
+Created on Mar 30, 2019
 
 @author: anders
 '''
 import unittest
 
-#import _fmiimage
 import _raveio
-#import _ropogenerator
 import os, string
 import numpy
 import _rave
-#import _polarscanparam
-#import _polarscan
 import _ravefield
 import _ravedata2d
 import _pdpprocessor
-#import ropo_realtime
 
 _rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
 

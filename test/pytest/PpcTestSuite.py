@@ -1,5 +1,5 @@
 '''
-Copyright (C) 2011 Swedish Meteorological and Hydrological Institute, SMHI,
+Copyright (C) 2019- Swedish Meteorological and Hydrological Institute, SMHI,
 
 This file is part of bRopo.
 
@@ -17,14 +17,13 @@ You should have received a copy of the GNU Lesser General Public License
 along with bRopo.  If not, see <http://www.gnu.org/licenses/>.
 ------------------------------------------------------------------------*/
 
-Test suite for bRopo
+Test suite for baltrad-ppc
 
 @file
 @author Anders Henja (Swedish Meteorological and Hydrological Institute, SMHI)
-@date 2011-08-20
+@date 2019-05-02
 '''
 import unittest
-#from FmiImageTest import *
 from PyPdpProcessorTest import *
 
 if __name__ == "__main__":
