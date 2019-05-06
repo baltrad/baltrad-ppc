@@ -688,13 +688,13 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
 
   if (PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK & self->requestedFieldMask) {
-    if (!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(result, residualClutterMask, "se.baltrad.ppc.residual_clutter_mask")) {
+    if (!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(tmpresult, residualClutterMask, "se.baltrad.ppc.residual_clutter_mask")) {
       goto done;
     }
   }
 
   if (PdpProcessor_QUALITY_ATTENUATION_MASK & self->requestedFieldMask) {
-    if (!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(result, attenuationMask, "se.baltrad.ppc.attenuation_mask")) {
+    if (!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(tmpresult, attenuationMask, "se.baltrad.ppc.attenuation_mask")) {
       goto done;
     }
   }
