@@ -66,7 +66,7 @@ install:
 	@cp -v -f $(PDP_PROCESSOR_TARGET) ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
 	@cp -v -f *.py ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
 	@-mkdir -p ${DESTDIR}$(SITEPACK_PYTHON)
-	@-echo "$(prefix)/share/baltrad-ppc/pyppc" > "${DESTDIR}$(SITEPACK_PYTHON)/pybaltradppc.pth"
+	@-echo "$(prefix)/share/baltrad-ppc/pyppc" > "${DESTDIR}$(SITEPACK_PYTHON)/baltrad-ppc.pth"
 
 .PHONY=clean
 clean:
