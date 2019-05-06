@@ -66,7 +66,7 @@ class ppc_quality_plugin(rave_quality_plugin):
           result = processor.process(obj)
           obj.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
           if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
-            f = obj.getParameter("CORR_ATT_TH")
+            f = result.getParameter("CORR_ATT_TH")
             f.quantity = "TH"
             obj.addParameter(f)
           
@@ -80,7 +80,7 @@ class ppc_quality_plugin(rave_quality_plugin):
             result = processor.process(scan)
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
             if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
-              f = scan.getParameter("CORR_ATT_TH")
+              f = result.getParameter("CORR_ATT_TH")
               f.quantity = "TH"
               scan.addParameter(f)
       except:
