@@ -444,7 +444,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   RaveData2D_t *outAttenuationZ = NULL, *outAttenuationZDR = NULL, *outAttenuationPIA = NULL, *outAttenuationDBZH = NULL;
   RaveData2D_t *outZPHI = NULL, *outAH = NULL;
   RaveField_t* pdpQualityField = NULL;
-  PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *paramKDP = NULL, *paramRHOHV = NULL, *correctedPDP = NULL;
+  PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *correctedDBZH = NULL, *attenuatedDBZH = NULL;
+  PolarScanParam_t *paramKDP = NULL, *paramRHOHV = NULL, *correctedPDP = NULL;
   PolarNavigator_t* navigator = NULL;
   PolarScanParam_t *TH = NULL, *ZDR = NULL, *DV = NULL, *PHIDP = NULL, *RHOHV = NULL, *DBZH = NULL;
 
@@ -662,6 +663,25 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
+  if (PdpProcessor_DBZH_CORR & self->requestedFieldMask) {
+    correctedDBZH = PdpProcessorInternal_createPolarScanParamFromData2D(dataDBZH, "DBZH_CORR", 1, 255.0, 0.0);
+    if (correctedDBZH == NULL ||
+        !PolarScan_addParameter(tmpresult, correctedDBZH)) {
+      RAVE_ERROR0("Failed to add corrected DBZH field");
+      goto done;
+    }
+  }
+
+  if (PdpProcessor_ATT_DBZH_CORR & self->requestedFieldMask) {
+    attenuatedDBZH = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationDBZH, "ATT_DBZH_CORR", 1, 255.0, 0.0);
+    if (attenuatedDBZH == NULL ||
+        !PolarScan_addParameter(tmpresult, attenuatedDBZH)) {
+      RAVE_ERROR0("Failed to add corrected and attenuated DBZH field");
+      goto done;
+    }
+  }
+
+
   if (PdpProcessor_KDP_CORR & self->requestedFieldMask) {
     paramKDP = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "KDP_CORR", 1, 255.0, 0.0);
     if (paramKDP == NULL ||
@@ -758,7 +778,9 @@ done:
   RAVE_OBJECT_RELEASE(correctedZDR);
   RAVE_OBJECT_RELEASE(correctedZPHI);
   RAVE_OBJECT_RELEASE(correctedPDP);
+  RAVE_OBJECT_RELEASE(correctedDBZH);
   RAVE_OBJECT_RELEASE(attenuatedZ);
+  RAVE_OBJECT_RELEASE(attenuatedDBZH);
   RAVE_OBJECT_RELEASE(paramKDP);
   RAVE_OBJECT_RELEASE(paramRHOHV);
   RAVE_OBJECT_RELEASE(tmpresult);
