@@ -26,12 +26,12 @@
 
 # Ropo specific c flags
 #
-CFLAGS= -I. $(RAVE_MODULE_CFLAGS) -std=c99
+CFLAGS= -I. $(RAVE_MODULE_CFLAGS)
 
 # --------------------------------------------------------------------
 # Fixed definitions
 
-SOURCES= pdp_processor.c
+SOURCES= pdp_processor.c ppc_options.c
 				
 OBJECTS= $(SOURCES:.c=.o)
 
