@@ -49,6 +49,7 @@ struct _PdpProcessor_t {
   double nodata; /**< nodata to used in most products */
   double minDBZ; /**< min DBZ threshold in the clutter correction */
   double qualityThreshold; /**< quality threshold in the clutter correction */
+  double preprocessZThreshold; /**< preprocessing Z threshold before starting actual processing */
   double residualMinZClutterThreshold; /**< min z clutter threshold during residual clutter filtering */
   double residualThresholdZ; /**< min Z threshold in the residual clutter filtering */
   double residualThresholdTexture; /**< texture threshold in the residual clutter filtering */
@@ -107,6 +108,7 @@ static int PdpProcessor_constructor(RaveCoreObject* obj)
   pdp->nodata = -999.0;
   pdp->minDBZ = -32.0;
   pdp->qualityThreshold = 0.75;
+  pdp->preprocessZThreshold = -20.0;
   pdp->residualMinZClutterThreshold = -31.5;
   pdp->residualClutterNodata = -999.0;
   pdp->residualClutterMaskNodata = -1.0;
@@ -135,7 +137,7 @@ static int PdpProcessor_constructor(RaveCoreObject* obj)
   pdp->attenuationAlpha = 0.2;
   pdp->attenuationPIAminZ = -30;
 
-  pdp->requestedFieldMask = PdpProcessor_CORR_ATT_TH | PdpProcessor_CORR_PHIDP | PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK;
+  pdp->requestedFieldMask = PdpProcessor_DBZH_CORR | PdpProcessor_ATT_DBZH_CORR | PdpProcessor_PHIDP_CORR | PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK;
 
   return 1;
 }
@@ -165,6 +167,7 @@ static int PdpProcessor_copyconstructor(RaveCoreObject* obj, RaveCoreObject* src
   this->nodata = src->nodata;
   this->minDBZ = src->minDBZ;
   this->qualityThreshold = src->qualityThreshold;
+  this->preprocessZThreshold = src->preprocessZThreshold;
   this->residualMinZClutterThreshold = src->residualMinZClutterThreshold;
   this->residualClutterNodata = src->residualClutterNodata;
   this->residualClutterMaskNodata = src->residualClutterMaskNodata;
@@ -430,20 +433,20 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   double range = 0.0, rangeKm = 0.0;
   long nbins = 0, nrays = 0;
   long bi = 0, ri = 0;
-  double nodataPHIDP = 0.0, nodataTH = 0.0, nodataZDR = 0.0, /*nodataDV = 0.0, */nodataRHOHV = 0.0;
+  double nodataPHIDP = 0.0, nodataTH = 0.0, nodataZDR = 0.0, nodataDBZH = 0.0, nodataRHOHV = 0.0;
   double flag = -999.9;
   double undetectTH = 0.0;
-  RaveData2D_t *dataTH = NULL, *dataZDR = NULL, *dataDV = NULL, *texturePHIDP = NULL;
+  RaveData2D_t *dataTH = NULL, *dataZDR = NULL, *dataDV = NULL, *texturePHIDP = NULL, *dataDBZH = NULL;
   RaveData2D_t *dataRHOHV = NULL, *textureZ = NULL, *dataPHIDP = NULL, *dataPDP = NULL;
   RaveData2D_t *clutterMap = NULL, *residualClutterMask = NULL;
   RaveData2D_t *outZ = NULL, *outQuality = NULL, *outClutterMask = NULL;
   RaveData2D_t *outPDP = NULL, *outKDP = NULL, *attenuationMask = NULL;
-  RaveData2D_t *outAttenuationZ = NULL, *outAttenuationZDR = NULL, *outAttenuationPIA = NULL;
+  RaveData2D_t *outAttenuationZ = NULL, *outAttenuationZDR = NULL, *outAttenuationPIA = NULL, *outAttenuationDBZH = NULL;
   RaveData2D_t *outZPHI = NULL, *outAH = NULL;
   RaveField_t* pdpQualityField = NULL;
   PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *paramKDP = NULL, *paramRHOHV = NULL, *correctedPDP = NULL;
   PolarNavigator_t* navigator = NULL;
-  PolarScanParam_t *TH = NULL, *ZDR = NULL, *DV = NULL, *PHIDP = NULL, *RHOHV = NULL;
+  PolarScanParam_t *TH = NULL, *ZDR = NULL, *DV = NULL, *PHIDP = NULL, *RHOHV = NULL, *DBZH = NULL;
 
   long starttime = PdpProcessorInternal_timestamp();
 
@@ -468,22 +471,39 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   DV = PolarScan_getParameter(scan, "VRADH");
   PHIDP = PolarScan_getParameter(scan, "PHIDP");
   RHOHV = PolarScan_getParameter(scan, "RHOHV");
+  DBZH = PolarScan_getParameter(scan, "DBZH");
+  if (TH == NULL || ZDR == NULL || DV == NULL || PHIDP == NULL || RHOHV == NULL || DBZH == NULL) {
+    RAVE_ERROR0("Can not generate PPC product since one or more of TH, ZDR, DV, PHIDP, RHOHV and DBZH is missing");
+    goto done;
+  }
 
   dataTH = PdpProcessorInternal_getData2DFromParam(TH, self->nodata);
   dataZDR = PdpProcessorInternal_getData2DFromParam(ZDR, self->nodata);
   dataDV = PdpProcessorInternal_getData2DFromParam(DV, self->nodata);
   dataPHIDP = PdpProcessorInternal_getData2DFromParam(PHIDP, self->nodata);
   dataRHOHV = PdpProcessorInternal_getData2DFromParam(RHOHV, self->nodata);
-  clutterMap = RaveData2D_zeros(nbins, nrays, RaveDataType_DOUBLE);
+  dataDBZH = PdpProcessorInternal_getData2DFromParam(DBZH, PolarScanParam_getNodata(DBZH));
+  if (dataTH == NULL || dataZDR == NULL || dataDV == NULL || dataPHIDP == NULL || dataRHOHV == NULL || dataDBZH == NULL) {
+    RAVE_ERROR0("Can not generate PPC product since one or more of data fields for TH, ZDR, DV, PHIDP, RHOHV and DBZH not could be retrieved");
+    goto done;
+  }
 
+  clutterMap = RaveData2D_zeros(nbins, nrays, RaveDataType_DOUBLE);
+  if (clutterMap == NULL) {
+    RAVE_ERROR0("Could not create clutter map");
+    goto done;
+  }
   // fprintf(stderr, "Starting actual calculations after %ld ms\n", PdpProcessorInternal_timestamp() - starttime);
   // IMPORTANT NOTE: The following command has to be applied until the
   //                 moment comuptation is corrected at RSP level
   dataPDP = RaveData2D_mulNumber(dataPHIDP, -1.0);
-
+  if (dataPDP == NULL) {
+    RAVE_ERROR0("Failed to multiplate PHIDP");
+    goto done;
+  }
   nodataPHIDP = self->nodata;
   nodataTH = self->nodata;
-  // nodataDV = self->nodata;
+  nodataDBZH = PolarScanParam_getNodata(DBZH);
   nodataZDR = self->nodata;
   nodataRHOHV = self->nodata;
   undetectTH = PolarScanParam_getUndetect(TH)*PolarScanParam_getGain(TH) + PolarScanParam_getOffset(TH);
@@ -492,7 +512,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     for (ri = 0; ri < nrays; ri++) {
       double v;
       RaveData2D_getValueUnchecked(dataTH, bi, ri, &v);
-      if (v < -20) {
+      if (v < self->preprocessZThreshold) {
         RaveData2D_setValueUnchecked(dataTH, bi, ri, nodataTH);
         RaveData2D_setValueUnchecked(dataZDR, bi, ri, nodataZDR);
         RaveData2D_setValueUnchecked(dataPDP, bi, ri, nodataPHIDP);
@@ -530,12 +550,13 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
       double v = 0.0;
       RaveData2D_getValueUnchecked(outQuality, bi, ri, &v);
 
-      if (v < 0.75 /*self->qualityThreshold*/) {
+      if (v < self->qualityThreshold) {
         RaveData2D_setValueUnchecked(dataTH, bi, ri, undetectTH);
         RaveData2D_setValueUnchecked(dataZDR, bi, ri, nodataZDR);
         RaveData2D_setValueUnchecked(dataPHIDP, bi, ri, nodataPHIDP);
         RaveData2D_setValueUnchecked(dataPDP, bi, ri, nodataPHIDP);
         RaveData2D_setValueUnchecked(dataRHOHV, bi, ri, nodataRHOHV);
+        RaveData2D_setValueUnchecked(dataDBZH, bi, ri, nodataDBZH);
       }
     }
   }
@@ -597,8 +618,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
       }
     }
   }
-  if (!PdpProcessor_attenuation(self, dataTH, dataZDR, outPDP, attenuationMask, self->attenuationGammaH,
-        self->attenuationAlpha, &outAttenuationZ, &outAttenuationZDR, &outAttenuationPIA)) {
+  if (!PdpProcessor_attenuation(self, dataTH, dataZDR, dataDBZH, outPDP, attenuationMask, self->attenuationGammaH,
+        self->attenuationAlpha, &outAttenuationZ, &outAttenuationZDR, &outAttenuationPIA, &outAttenuationDBZH)) {
     goto done;
   }
   // fprintf(stderr, "attenuation ran after %ld ms\n", PdpProcessorInternal_timestamp() - starttime);
@@ -607,7 +628,6 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
    * Application of the ZPHI methodology (Testud et al, 2000) for
    * attenuation correction
    **************************************************************/
-
   if (!PdpProcessor_zphi(self, dataTH, outPDP, attenuationMask, rangeKm,
       self->BB, self->attenuationGammaH, &outZPHI, &outAH)) {
     goto done;
@@ -624,8 +644,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
-  if (PdpProcessor_CORR_TH & self->requestedFieldMask) {
-    correctedZ = PdpProcessorInternal_createPolarScanParamFromData2D(dataTH, "CORR_TH", 1, 255.0, 0.0);
+  if (PdpProcessor_TH_CORR & self->requestedFieldMask) {
+    correctedZ = PdpProcessorInternal_createPolarScanParamFromData2D(dataTH, "TH_CORR", 1, 255.0, 0.0);
     if (correctedZ == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZ)) {
       RAVE_ERROR0("Failed to add corrected TH field");
@@ -633,8 +653,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_CORR_ATT_TH & self->requestedFieldMask) {
-    attenuatedZ = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZ, "CORR_ATT_TH", 1, 255.0, 0.0);
+  if (PdpProcessor_ATT_TH_CORR & self->requestedFieldMask) {
+    attenuatedZ = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZ, "ATT_TH_CORR", 1, 255.0, 0.0);
     if (attenuatedZ == NULL ||
         !PolarScan_addParameter(tmpresult, attenuatedZ)) {
       RAVE_ERROR0("Failed to add corrected and attenuated TH field");
@@ -642,8 +662,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_CORR_KDP & self->requestedFieldMask) {
-    paramKDP = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "CORR_KDP", 1, 255.0, 0.0);
+  if (PdpProcessor_KDP_CORR & self->requestedFieldMask) {
+    paramKDP = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "KDP_CORR", 1, 255.0, 0.0);
     if (paramKDP == NULL ||
         !PolarScan_addParameter(tmpresult, paramKDP)) {
       RAVE_ERROR0("Failed to add corrected KDP field");
@@ -651,8 +671,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_CORR_RHOHV & self->requestedFieldMask) {
-    paramRHOHV = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "CORR_RHOHV", 1, 255.0, 0.0);
+  if (PdpProcessor_RHOHV_CORR & self->requestedFieldMask) {
+    paramRHOHV = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "RHOHV_CORR", 1, 255.0, 0.0);
     if (paramRHOHV == NULL ||
         !PolarScan_addParameter(tmpresult, paramRHOHV)) {
       RAVE_ERROR0("Failed to add corrected RHOHV field");
@@ -660,8 +680,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_CORR_PHIDP & self->requestedFieldMask) {
-    correctedPDP = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "CORR_PHIDP", 1, 255.0, 0.0);
+  if (PdpProcessor_PHIDP_CORR & self->requestedFieldMask) {
+    correctedPDP = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "PHIDP_CORR", 1, 255.0, 0.0);
     if (correctedPDP == NULL ||
         !PolarScan_addParameter(tmpresult, correctedPDP)) {
       RAVE_ERROR0("Failed to add corrected PDP field");
@@ -669,8 +689,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_CORR_ZDR & self->requestedFieldMask) {
-    correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "CORR_ZDR", 1, 255.0, 0.0);
+  if (PdpProcessor_ZDR_CORR & self->requestedFieldMask) {
+    correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "ZDR_CORR", 1, 255.0, 0.0);
     if (correctedZDR == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZDR)) {
       RAVE_ERROR0("Failed to add corrected ZDR field");
@@ -678,8 +698,8 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_CORR_ZPHI & self->requestedFieldMask) {
-    correctedZPHI = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "CORR_ZPHI", 1, 255.0, 0.0);
+  if (PdpProcessor_ZPHI_CORR & self->requestedFieldMask) {
+    correctedZPHI = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "ZPHI_CORR", 1, 255.0, 0.0);
     if (correctedZPHI == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZPHI)) {
       RAVE_ERROR0("Failed to add corrected >ZPHI field");
@@ -711,6 +731,7 @@ done:
   RAVE_OBJECT_RELEASE(textureZ);
   RAVE_OBJECT_RELEASE(dataPHIDP);
   RAVE_OBJECT_RELEASE(dataPDP);
+  RAVE_OBJECT_RELEASE(dataDBZH);
   RAVE_OBJECT_RELEASE(clutterMap);
   RAVE_OBJECT_RELEASE(residualClutterMask);
   RAVE_OBJECT_RELEASE(outZ);
@@ -722,6 +743,7 @@ done:
   RAVE_OBJECT_RELEASE(outAttenuationZ);
   RAVE_OBJECT_RELEASE(outAttenuationZDR);
   RAVE_OBJECT_RELEASE(outAttenuationPIA);
+  RAVE_OBJECT_RELEASE(outAttenuationDBZH);
   RAVE_OBJECT_RELEASE(outZPHI);
   RAVE_OBJECT_RELEASE(outAH);
   RAVE_OBJECT_RELEASE(navigator);
@@ -730,6 +752,7 @@ done:
   RAVE_OBJECT_RELEASE(DV);
   RAVE_OBJECT_RELEASE(PHIDP);
   RAVE_OBJECT_RELEASE(RHOHV);
+  RAVE_OBJECT_RELEASE(DBZH);
   RAVE_OBJECT_RELEASE(pdpQualityField);
   RAVE_OBJECT_RELEASE(correctedZ);
   RAVE_OBJECT_RELEASE(correctedZDR);
@@ -1021,6 +1044,18 @@ double PdpProcessor_getQualityThreshold(PdpProcessor_t* self)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
   return self->qualityThreshold;
+}
+
+void PdpProcessor_setPreprocessZThreshold(PdpProcessor_t* self, double minv)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  self->preprocessZThreshold = minv;
+}
+
+double PdpProcessor_getPreprocessZThreshold(PdpProcessor_t* self)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  return self->preprocessZThreshold;
 }
 
 void PdpProcessor_setResidualMinZClutterThreshold(PdpProcessor_t* self, double minv)
@@ -2001,16 +2036,17 @@ done:
   return result;
 }
 
-int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* zdr, RaveData2D_t* pdp,
-    RaveData2D_t* mask, double gamma_h, double alpha, RaveData2D_t** outz, RaveData2D_t** outzdr, RaveData2D_t** outPIA)
+int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* zdr, RaveData2D_t* dbzh, RaveData2D_t* pdp,
+    RaveData2D_t* mask, double gamma_h, double alpha, RaveData2D_t** outz, RaveData2D_t** outzdr, RaveData2D_t** outPIA, RaveData2D_t** outDBZH)
 {
   long nrays = 0;
   long nbins = 0;
   int result = 0;
   long ri = 0, bi = 0;
   double vpianodata = 0.0;
+  double dbzhnodata = 0.0;
   RaveData2D_t *PIA = NULL, *PIDA = NULL;
-  RaveData2D_t *zdrres = NULL, *zres = NULL;
+  RaveData2D_t *zdrres = NULL, *zres = NULL, *dbzhres = NULL;
   RAVE_ASSERT((self != NULL), "self == NULL");
   if (Z == NULL || zdr == NULL || pdp == NULL || mask == NULL) {
     RAVE_ERROR0("Z, zdr, pdp or mask is NULL");
@@ -2020,8 +2056,8 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
     RAVE_ERROR0("Out Z / zdr or PIA is NULL");
     goto done;
   }
-  if (!RaveData2D_usingNodata(pdp)) {
-    RAVE_ERROR0("pdp is not using nodata");
+  if (!RaveData2D_usingNodata(pdp) || !RaveData2D_usingNodata(dbzh)) {
+    RAVE_ERROR0("pdp or dbzh is not using nodata");
     goto done;
   }
   nrays = RaveData2D_getYsize(Z);
@@ -2044,6 +2080,8 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
   vpianodata = RaveData2D_getNodata(pdp);
   RaveData2D_setNodata(PIA, vpianodata);
   RaveData2D_useNodata(PIA, 1);
+
+  dbzhnodata = RaveData2D_getNodata(dbzh);
 
   for (ri = 0; ri < nrays; ri++) {
     long startbi = -1, endbi = -1;
@@ -2078,14 +2116,18 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
   }
   zdrres = RAVE_OBJECT_CLONE(zdr);
   zres = RAVE_OBJECT_CLONE(Z);
-  if (zdrres == NULL || zres == NULL) {
+  dbzhres = RAVE_OBJECT_CLONE(dbzh);
+
+  if (zdrres == NULL || zres == NULL || dbzhres == NULL) {
+    RAVE_ERROR0("Failed to clone resulting fields");
     goto done;
   }
 
   for (ri = 0; ri < nrays; ri++) {
     for (bi = 0; bi < nbins; bi++) {
-      double vz = 0, vpia = 0, vzdr = 0, vpida = 0;
+      double vz = 0, vpia = 0, vzdr = 0, vpida = 0, vdbzh = 0;
       RaveData2D_getValueUnchecked(Z, bi, ri, &vz);
+      RaveData2D_getValueUnchecked(dbzh, bi, ri, &vdbzh);
       RaveData2D_getValueUnchecked(PIA, bi, ri, &vpia);
       RaveData2D_getValueUnchecked(zdr, bi, ri, &vzdr);
       RaveData2D_getValueUnchecked(PIDA, bi, ri, &vpida);
@@ -2093,6 +2135,11 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
         RaveData2D_setValueUnchecked(zres, bi, ri, vz + vpia);
         RaveData2D_setValueUnchecked(zdrres, bi, ri, vzdr + vpida);
       }
+
+      if (vpia != vpianodata && vpia >= 0.0 && dbzhnodata != vdbzh && vdbzh > 0.0) { /* Adding attenuation to DBZH */
+        RaveData2D_setValueUnchecked(dbzhres, bi, ri, vdbzh + vpia);
+      }
+
       RaveData2D_getValueUnchecked(zres, bi, ri, &vz);
       if (vz < self->attenuationPIAminZ) {
         RaveData2D_setValueUnchecked(PIA, bi, ri, vpianodata);
@@ -2103,6 +2150,7 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
   *outz = RAVE_OBJECT_COPY(zres);
   *outzdr = RAVE_OBJECT_COPY(zdrres);
   *outPIA = RAVE_OBJECT_COPY(PIA);
+  *outDBZH = RAVE_OBJECT_COPY(dbzhres);
 
   result = 1;
 done:
@@ -2110,6 +2158,7 @@ done:
   RAVE_OBJECT_RELEASE(PIDA);
   RAVE_OBJECT_RELEASE(zdrres);
   RAVE_OBJECT_RELEASE(zres);
+  RAVE_OBJECT_RELEASE(dbzhres);
   return result;
 }
 

@@ -441,43 +441,47 @@ static PyObject* _pypdpprocessor_pdpScript(PyPdpProcessor* self, PyObject* args)
 
 static PyObject* _pypdpprocessor_attenuation(PyPdpProcessor* self, PyObject* args)
 {
-  PyObject *pyinz = NULL, *pyinzdr = NULL, *pyinpdp = NULL, *pyinmask = NULL;
-  RaveData2D_t *outz = NULL, *outzdr = NULL, *outpia = NULL;
-  PyObject *pyoutz = NULL, *pyoutzdr = NULL, *pyoutpia = NULL;
+  PyObject *pyinz = NULL, *pyinzdr = NULL, *pyindbzh = NULL, *pyinpdp = NULL, *pyinmask = NULL;
+  RaveData2D_t *outz = NULL, *outzdr = NULL, *outpia = NULL, *outdbzh = NULL;
+  PyObject *pyoutz = NULL, *pyoutzdr = NULL, *pyoutpia = NULL, *pyoutdbzh = NULL;;
   PyObject* result = NULL;
   double gamma_h = 0.0, alpha = 0.0;
 
-  if (!PyArg_ParseTuple(args, "OOOOdd", &pyinz, &pyinzdr, &pyinpdp, &pyinmask, &gamma_h, &alpha))
+  if (!PyArg_ParseTuple(args, "OOOOOdd", &pyinz, &pyinzdr, &pyindbzh, &pyinpdp, &pyinmask, &gamma_h, &alpha))
     return NULL;
 
-  if (!PyRaveData2D_Check(pyinz) || !PyRaveData2D_Check(pyinzdr) || !PyRaveData2D_Check(pyinpdp) || !PyRaveData2D_Check(pyinmask)) {
-    raiseException_returnNULL(PyExc_AttributeError, "1st,2nd,3rd and 4th argument must be of type RaveData2DCore");
+  if (!PyRaveData2D_Check(pyinz) || !PyRaveData2D_Check(pyinzdr) || !PyRaveData2D_Check(pyindbzh) || !PyRaveData2D_Check(pyinpdp) || !PyRaveData2D_Check(pyinmask)) {
+    raiseException_returnNULL(PyExc_AttributeError, "1st,2nd,3rd, 4th and 5th argument must be of type RaveData2DCore");
   }
 
-  if (!RaveData2D_usingNodata(((PyRaveData2D*)pyinpdp)->field)) {
-    raiseException_returnNULL(PyExc_AttributeError, "pdp field must be defined to use nodata");
+  if (!RaveData2D_usingNodata(((PyRaveData2D*)pyinpdp)->field) || !RaveData2D_usingNodata(((PyRaveData2D*)pyindbzh)->field)) {
+    raiseException_returnNULL(PyExc_AttributeError, "pdp and dbzh field must be defined to use nodata");
   }
 
   if (!PdpProcessor_attenuation(self->processor, ((PyRaveData2D*)pyinz)->field, ((PyRaveData2D*)pyinzdr)->field,
-      ((PyRaveData2D*)pyinpdp)->field, ((PyRaveData2D*)pyinmask)->field, gamma_h, alpha, &outz, &outzdr, &outpia)) {
+      ((PyRaveData2D*)pyindbzh)->field, ((PyRaveData2D*)pyinpdp)->field, ((PyRaveData2D*)pyinmask)->field, gamma_h, alpha,
+      &outz, &outzdr, &outpia, &outdbzh)) {
     raiseException_returnNULL(PyExc_RuntimeError, "Failed to run pdp processing");
   }
   pyoutz = (PyObject*)PyRaveData2D_New(outz);
   pyoutzdr = (PyObject*)PyRaveData2D_New(outzdr);
   pyoutpia = (PyObject*)PyRaveData2D_New(outpia);
-  if (pyoutz == NULL || pyoutzdr == NULL || pyoutpia == NULL)  {
+  pyoutdbzh = (PyObject*)PyRaveData2D_New(outdbzh);
+  if (pyoutz == NULL || pyoutzdr == NULL || pyoutpia == NULL || pyoutdbzh == NULL)  {
     raiseException_gotoTag(done, PyExc_RuntimeError, "Failed to create rave data 2d python objects");
   }
 
-  result = Py_BuildValue("(OOO)", pyoutz, pyoutzdr, pyoutpia);
+  result = Py_BuildValue("(OOOO)", pyoutz, pyoutzdr, pyoutpia, pyoutdbzh);
 
 done:
   RAVE_OBJECT_RELEASE(outz);
   RAVE_OBJECT_RELEASE(outzdr);
   RAVE_OBJECT_RELEASE(outpia);
+  RAVE_OBJECT_RELEASE(outdbzh);
   Py_XDECREF(pyoutz);
   Py_XDECREF(pyoutzdr);
   Py_XDECREF(pyoutpia);
+  Py_XDECREF(pyoutdbzh);
 
   return result;
 }
@@ -537,6 +541,7 @@ static struct PyMethodDef _pypdpprocessor_methods[] =
   {"nodata", NULL},
   {"minDBZ", NULL},
   {"qualityThreshold", NULL},
+  {"preprocessZThreshold", NULL},
   {"kdpUp", NULL},
   {"kdpDown", NULL},
   {"kdpStdThreshold", NULL},
@@ -664,6 +669,8 @@ static PyObject* _pypdpprocessor_getattro(PyPdpProcessor* self, PyObject* name)
     return PyFloat_FromDouble(PdpProcessor_getBB(self->processor));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "thresholdPhidp") == 0) {
     return PyFloat_FromDouble(PdpProcessor_getThresholdPhidp(self->processor));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "preprocessZThreshold") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getPreprocessZThreshold(self->processor));
   }
 
   return PyObject_GenericGetAttr((PyObject*)self, name);
@@ -986,6 +993,16 @@ static int _pypdpprocessor_setattro(PyPdpProcessor* self, PyObject* name, PyObje
     } else {
       raiseException_gotoTag(done, PyExc_ValueError, "thresholdPhidp must be of type float or long");
     }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "preprocessZThreshold") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setPreprocessZThreshold(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setPreprocessZThreshold(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setPreprocessZThreshold(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "preprocessZThreshold must be of type float or long");
+    }
   } else {
     raiseException_gotoTag(done, PyExc_AttributeError, PY_RAVE_ATTRO_NAME_TO_STRING(name));
   }
@@ -1099,16 +1116,18 @@ MOD_INIT(_pdpprocessor)
     return MOD_INIT_ERROR;
   }
 
-  add_long_constant(dictionary, "P_CORR_TH", PdpProcessor_CORR_TH);
-  add_long_constant(dictionary, "P_CORR_ATT_TH", PdpProcessor_CORR_ATT_TH);
-  add_long_constant(dictionary, "P_CORR_KDP", PdpProcessor_CORR_KDP);
-  add_long_constant(dictionary, "P_CORR_RHOHV", PdpProcessor_CORR_RHOHV);
-  add_long_constant(dictionary, "P_CORR_PHIDP", PdpProcessor_CORR_PHIDP);
-  add_long_constant(dictionary, "P_CORR_ZDR", PdpProcessor_CORR_ZDR);
-  add_long_constant(dictionary, "P_CORR_ZPHI", PdpProcessor_CORR_ZPHI);
-  add_long_constant(dictionary, "Q_QUALITY_RESIDUAL_CLUTTER_MASK", PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK);
-  add_long_constant(dictionary, "Q_QUALITY_ATTENUATION_MASK", PdpProcessor_QUALITY_ATTENUATION_MASK);
-
+  add_long_constant(dictionary, "P_TH_CORR", PdpProcessor_TH_CORR);
+  add_long_constant(dictionary, "P_ATT_TH_CORR", PdpProcessor_ATT_TH_CORR);
+  add_long_constant(dictionary, "P_DBZH_CORR", PdpProcessor_DBZH_CORR);
+  add_long_constant(dictionary, "P_ATT_DBZH_CORR", PdpProcessor_ATT_DBZH_CORR);
+  add_long_constant(dictionary, "P_KDP_CORR", PdpProcessor_KDP_CORR);
+  add_long_constant(dictionary, "P_RHOHV_CORR", PdpProcessor_RHOHV_CORR);
+  add_long_constant(dictionary, "P_PHIDP_CORR", PdpProcessor_PHIDP_CORR);
+  add_long_constant(dictionary, "P_ZDR_CORR", PdpProcessor_ZDR_CORR);
+  add_long_constant(dictionary, "P_ZPHI_CORR", PdpProcessor_ZPHI_CORR);
+  add_long_constant(dictionary, "Q_RESIDUAL_CLUTTER_MASK", PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK);
+  add_long_constant(dictionary, "Q_ATTENUATION_MASK", PdpProcessor_QUALITY_ATTENUATION_MASK);
+  add_long_constant(dictionary, "Q_ATTENUATION", PdpProcessor_QUALITY_ATTENUATION);
 
   import_pypolarscan();
   import_ravedata2d();

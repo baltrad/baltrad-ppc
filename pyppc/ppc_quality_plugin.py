@@ -62,12 +62,12 @@ class ppc_quality_plugin(rave_quality_plugin):
           if reprocess_quality_flag == False and obj.findQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask") != None:
             return obj
           processor = _pdpprocessor.new()
-          processor.requestedFields = _pdpprocessor.P_CORR_ATT_TH | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+          processor.requestedFields = _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
           result = processor.process(obj)
           obj.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
           if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
-            f = result.getParameter("CORR_ATT_TH")
-            f.quantity = "TH"
+            f = result.getParameter("ATT_DBZH_CORR")
+            f.quantity = "DBZH"
             obj.addParameter(f)
           
         elif _polarvolume.isPolarVolume(obj):
@@ -76,12 +76,12 @@ class ppc_quality_plugin(rave_quality_plugin):
             if reprocess_quality_flag == False and scan.findQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask") != None:
               continue
             processor = _pdpprocessor.new()
-            processor.requestedFields = _pdpprocessor.P_CORR_ATT_TH | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+            processor.requestedFields = _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
             result = processor.process(scan)
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
             if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
-              f = result.getParameter("CORR_ATT_TH")
-              f.quantity = "TH"
+              f = result.getParameter("ATT_DBZH_CORR")
+              f.quantity = "DBZH"
               scan.addParameter(f)
       except:
         logger.exception("Failed to generate baltrad-ppc field")

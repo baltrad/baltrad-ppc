@@ -228,6 +228,16 @@ class PyPdpProcessorTest(unittest.TestCase):
     self.assertAlmostEqual(0.75, a.qualityThreshold, 3)
     a.qualityThreshold = 1
     self.assertAlmostEqual(1.0, a.qualityThreshold, 3);
+
+  def testPreprocessZThreshold(self):
+    a = _pdpprocessor.new()
+    
+    self.assertTrue("preprocessZThreshold" in dir(a))
+    
+    self.assertAlmostEqual(-20.0, a.preprocessZThreshold, 3)
+    a.preprocessZThreshold = 1
+    self.assertAlmostEqual(1.0, a.preprocessZThreshold, 3);
+    
     
   def testKdpUp(self):
     a = _pdpprocessor.new()
@@ -304,17 +314,31 @@ class PyPdpProcessorTest(unittest.TestCase):
         
     self.assertTrue("requestedFields" in dir(a))
 
-    self.assertEqual(_pdpprocessor.P_CORR_ATT_TH | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK, a.requestedFields);
+    self.assertEqual(_pdpprocessor.P_DBZH_CORR |_pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.P_PHIDP_CORR | _pdpprocessor.Q_RESIDUAL_CLUTTER_MASK, a.requestedFields);
     
-    a.requestedFields = _pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR
+    a.requestedFields = _pdpprocessor.P_KDP_CORR | _pdpprocessor.P_PHIDP_CORR | _pdpprocessor.P_ZDR_CORR
 
-    self.assertEqual(_pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR, a.requestedFields);
+    self.assertEqual(_pdpprocessor.P_KDP_CORR | _pdpprocessor.P_PHIDP_CORR | _pdpprocessor.P_ZDR_CORR, a.requestedFields);
 
-    self.assertNotEqual(_pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR | _pdpprocessor.P_CORR_ZPHI, a.requestedFields)
+    self.assertNotEqual(_pdpprocessor.P_KDP_CORR | _pdpprocessor.P_PHIDP_CORR | _pdpprocessor.P_ZDR_CORR | _pdpprocessor.P_ZPHI_CORR, a.requestedFields)
         
-    a.requestedFields = a.requestedFields | _pdpprocessor.P_CORR_ZPHI
+    a.requestedFields = a.requestedFields | _pdpprocessor.P_ZPHI_CORR
 
-    self.assertEqual(_pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_PHIDP | _pdpprocessor.P_CORR_ZDR | _pdpprocessor.P_CORR_ZPHI, a.requestedFields);
+    self.assertEqual(_pdpprocessor.P_KDP_CORR | _pdpprocessor.P_PHIDP_CORR | _pdpprocessor.P_ZDR_CORR | _pdpprocessor.P_ZPHI_CORR, a.requestedFields);
+
+  def testAvailableResultSelectors(self):
+    self.assertEqual(1, _pdpprocessor.P_TH_CORR)
+    self.assertEqual(1<<1, _pdpprocessor.P_ATT_TH_CORR)
+    self.assertEqual(1<<2, _pdpprocessor.P_DBZH_CORR)
+    self.assertEqual(1<<3, _pdpprocessor.P_ATT_DBZH_CORR)
+    self.assertEqual(1<<4, _pdpprocessor.P_KDP_CORR)
+    self.assertEqual(1<<5, _pdpprocessor.P_RHOHV_CORR)
+    self.assertEqual(1<<6, _pdpprocessor.P_PHIDP_CORR)
+    self.assertEqual(1<<7, _pdpprocessor.P_ZDR_CORR)
+    self.assertEqual(1<<8, _pdpprocessor.P_ZPHI_CORR)
+    self.assertEqual(1<<9, _pdpprocessor.Q_RESIDUAL_CLUTTER_MASK)
+    self.assertEqual(1<<10, _pdpprocessor.Q_ATTENUATION_MASK)
+    self.assertEqual(1<<11, _pdpprocessor.Q_ATTENUATION)
 
   def testResidualMinZClutterThreshold(self):
     a = _pdpprocessor.new()
@@ -788,6 +812,10 @@ class PyPdpProcessorTest(unittest.TestCase):
                                        [5.0, 6.0, 7.0, 8.0],
                                        [8.0, 7.0, 6.0, 5.0],
                                          [4.0, 3.0, 2.0, 1.0]], numpy.float64))
+    dbzh = _ravedata2d.new(numpy.array([[1.0, 2.0, 3.0, 4.0],
+                                        [5.0, 6.0, 7.0, 8.0],
+                                        [8.0, 7.0, 6.0, 5.0],
+                                        [4.0, 3.0, 2.0, 1.0]], numpy.float64))
     pdp = _ravedata2d.new(numpy.array([[1.0, 2.0, 3.0, 4.0],
                                        [5.0, 6.0, 7.0, 8.0],
                                        [8.0, 7.0, 6.0, 5.0],
@@ -798,8 +826,10 @@ class PyPdpProcessorTest(unittest.TestCase):
                                        [4.0, 3.0, 2.0, 0.0]], numpy.float64))
     pdp.nodata = -999
     pdp.useNodata = True
+    dbzh.nodata = -999
+    dbzh.useNodata = True
     
-    zres, zdrres, piares = processor.attenuation(z, zdr, pdp, mask, 1.0, 2.0)
+    zres, zdrres, piares, dbzhres = processor.attenuation(z, zdr, dbzh, pdp, mask, 1.0, 2.0)
     #print(str(zres.getData()))
     #print(str(zdrres.getData()))
     #print(str(piares.getData()))
@@ -814,6 +844,11 @@ class PyPdpProcessorTest(unittest.TestCase):
       [5,    8,   11,   12],
       [8,    7,    6,    5],
       [4,    3,    2,    1]], numpy.float64)
+    expected_dbzh = numpy.array([
+      [1,    3,    5,    6],
+      [5,    7,    9,   10],
+      [8,    7,    6,    5],
+      [4,    3,    2,    1]], numpy.float64)
     expected_pia = numpy.array([
       [0,   1,   2,   2],
       [0,   1,   2,   2],
@@ -825,6 +860,7 @@ class PyPdpProcessorTest(unittest.TestCase):
         self.assertAlmostEqual(zres.getData()[i,j], expected_z[i,j], 3)
         self.assertAlmostEqual(zdrres.getData()[i,j], expected_zdr[i,j], 3)  
         self.assertAlmostEqual(piares.getData()[i,j], expected_pia[i,j], 3)  
+        self.assertAlmostEqual(dbzhres.getData()[i,j], expected_dbzh[i,j], 3)  
      
   def testZphi(self):
     processor = _pdpprocessor.new()
@@ -875,20 +911,20 @@ class PyPdpProcessorTest(unittest.TestCase):
   def test_process_CORR_KDP_CORR_ZPHI(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
-    processor.requestedFields = _pdpprocessor.P_CORR_KDP | _pdpprocessor.P_CORR_ZPHI  
+    processor.requestedFields = _pdpprocessor.P_KDP_CORR | _pdpprocessor.P_ZPHI_CORR  
     result = processor.process(a.object.getScan(0))
-    self.assertFalse(result.hasParameter("CORR_TH"))
-    self.assertTrue(result.hasParameter("CORR_KDP"))
-    self.assertTrue(result.hasParameter("CORR_ZPHI"))
+    self.assertFalse(result.hasParameter("TH_CORR"))
+    self.assertTrue(result.hasParameter("KDP_CORR"))
+    self.assertTrue(result.hasParameter("ZPHI_CORR"))
 
   def test_process_CORR_TH_CORR_ZPHI(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
-    processor.requestedFields = _pdpprocessor.P_CORR_TH | _pdpprocessor.P_CORR_ZPHI  
+    processor.requestedFields = _pdpprocessor.P_TH_CORR | _pdpprocessor.P_ZPHI_CORR  
     result = processor.process(a.object.getScan(0))
-    self.assertTrue(result.hasParameter("CORR_TH"))
-    self.assertFalse(result.hasParameter("CORR_KDP"))
-    self.assertTrue(result.hasParameter("CORR_ZPHI"))
+    self.assertTrue(result.hasParameter("TH_CORR"))
+    self.assertFalse(result.hasParameter("KDP_CORR"))
+    self.assertTrue(result.hasParameter("ZPHI_CORR"))
     
     
 if __name__ == "__main__":

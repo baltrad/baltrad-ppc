@@ -42,16 +42,18 @@ extern RaveCoreObjectType PdpProcessor_TYPE;
  */
 #define TRAP_UNDEF_VALUE -99999999999.0
 
-/**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected TH to result */
-#define PdpProcessor_CORR_TH        (1)       /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected TH to result */
-#define PdpProcessor_CORR_ATT_TH    (1 << 1)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected and attenuated TH to result */
-#define PdpProcessor_CORR_KDP       (1 << 2)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected KDP to result */
-#define PdpProcessor_CORR_RHOHV     (1 << 3)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected RHOHV to result */
-#define PdpProcessor_CORR_PHIDP     (1 << 4)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected PHIDP to result */
-#define PdpProcessor_CORR_ZDR       (1 << 5)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected ZDR to result */
-#define PdpProcessor_CORR_ZPHI      (1 << 6)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected ZPHI to result */
-#define PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK (1 << 7) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for residual clutter flag */
-#define PdpProcessor_QUALITY_ATTENUATION_MASK (1 << 8) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for attenuation mask */
+#define PdpProcessor_TH_CORR        (1)       /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected TH to result */
+#define PdpProcessor_ATT_TH_CORR    (1 << 1)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected and attenuated TH to result */
+#define PdpProcessor_DBZH_CORR      (1 << 2)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected DBZH to result */
+#define PdpProcessor_ATT_DBZH_CORR  (1 << 3)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected and attenuated DBZH to result */
+#define PdpProcessor_KDP_CORR       (1 << 4)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected KDP to result */
+#define PdpProcessor_RHOHV_CORR     (1 << 5)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected RHOHV to result */
+#define PdpProcessor_PHIDP_CORR     (1 << 6)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected PHIDP to result */
+#define PdpProcessor_ZDR_CORR       (1 << 7)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected ZDR to result */
+#define PdpProcessor_ZPHI_CORR      (1 << 8)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected ZPHI to result */
+#define PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK (1 << 9) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for residual clutter flag */
+#define PdpProcessor_QUALITY_ATTENUATION_MASK (1 << 10) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for attenuation mask */
+#define PdpProcessor_QUALITY_ATTENUATION (1 << 11) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for actual attenuation */
 
 
 /**
@@ -125,7 +127,7 @@ void PdpProcessor_setBB(PdpProcessor_t* self, double v);
 
 /**
  * @returns the BB value used in the zphi part of the pdp processing
- * @param[in] self - self
+ * @param[in] self - selfPdpProcessor_TH_CORR_ATT
  */
 double PdpProcessor_getBB(PdpProcessor_t* self);
 
@@ -380,6 +382,19 @@ void PdpProcessor_setQualityThreshold(PdpProcessor_t* self, double minv);
  * @param[in] self - self
  */
 double PdpProcessor_getQualityThreshold(PdpProcessor_t* self);
+
+/**
+ * A preprocessing min threshold before the actual processing begins. Defaults at -20.0
+ * @param[in] self - self
+ * @param[in] minv - the threshold
+ */
+void PdpProcessor_setPreprocessZThreshold(PdpProcessor_t* self, double minv);
+
+/**
+ * @returns the preprocessing min threshold before the actual processing begins. Defaults at -20.0
+ * @param[in] self - self
+ */
+double PdpProcessor_getPreprocessZThreshold(PdpProcessor_t* self);
 
 /**
  * The residual min z clutter threshold that should be used in the residual clutter filter process
@@ -672,8 +687,8 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
 
 int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, double rWin1, double rWin2, long nrIter, RaveData2D_t** pdpf, RaveData2D_t** kdp);
 
-int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* zdr, RaveData2D_t* pdp,
-    RaveData2D_t* mask, double gamma_h, double alpha, RaveData2D_t** outz, RaveData2D_t** outzdr, RaveData2D_t** outPIA);
+int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* zdr, RaveData2D_t* dbzh, RaveData2D_t* pdp,
+    RaveData2D_t* mask, double gamma_h, double alpha, RaveData2D_t** outz, RaveData2D_t** outzdr, RaveData2D_t** outPIA, RaveData2D_t** outDBZH);
 
 int PdpProcessor_zphi(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* pdp, RaveData2D_t* mask,
     double dr, double BB, double gamma_h, RaveData2D_t** outzphi, RaveData2D_t** outAH);
