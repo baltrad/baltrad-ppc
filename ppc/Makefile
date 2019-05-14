@@ -31,7 +31,7 @@ CFLAGS= -I. $(RAVE_MODULE_CFLAGS)
 # --------------------------------------------------------------------
 # Fixed definitions
 
-SOURCES= pdp_processor.c ppc_options.c
+SOURCES= pdp_processor.c ppc_options.c ppc_radar_options.c
 				
 OBJECTS= $(SOURCES:.c=.o)
 

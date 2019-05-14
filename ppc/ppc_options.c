@@ -82,6 +82,15 @@ fail:
 /*@} End of Private functions */
 
 /*@{ Interface functions */
+PpcOptions_t* PpcOptions_load(const char* filename)
+{
+
+}
+
+const char* PpcOptions_getValue(PpcOptions_t* self, const char* name)
+{
+
+}
 
 
 /*@} End of Interface functions */

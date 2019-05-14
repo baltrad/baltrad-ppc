@@ -25,7 +25,7 @@ Test suite for baltrad-ppc
 '''
 import unittest
 from PyPdpProcessorTest import *
-
+from PyPpcRadarOptionsTest import *
 if __name__ == "__main__":
   unittest.main()
 

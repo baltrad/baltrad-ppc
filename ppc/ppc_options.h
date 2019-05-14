@@ -36,10 +36,10 @@ typedef struct _PpcOptions_t PpcOptions_t;
 /**
  * Type definition to use when creating a rave object.
  */
-extern RaveCoreObjectType PdpProcessor_TYPE;
+extern RaveCoreObjectType PpcOptions_TYPE;
 
 PpcOptions_t* PpcOptions_load(const char* filename);
 
-const char* PpcOptions_getValue(PpcOptions_t* self, const char* name);
+const char* PpcOptions_getRadarOptions(PpcOptions_t* self, const char* name);
 
 #endif /* PPC_OPTIONS_H_ */

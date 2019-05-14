@@ -42,6 +42,10 @@ PDP_PROCESSOR_SOURCE= pypdpprocessor.c
 PDP_PROCESSOR_OBJECTS= $(PDP_PROCESSOR_SOURCE:.c=.o)
 PDP_PROCESSOR_TARGET= _pdpprocessor.so
 
+PPC_RADAR_OPTIONS_SOURCE= pyppcradaroptions.c
+PPC_RADAR_OPTIONS_OBJECTS= $(PPC_RADAR_OPTIONS_SOURCE:.c=.o)
+PPC_RADAR_OPTIONS_TARGET= _ppcradaroptions.so
+
 MAKECDEPEND=$(CC) -MM $(CFLAGS) -MT '$(@D)/$(@F)' -o $(DF).d $<
 
 DEPDIR=.dep
@@ -55,10 +59,13 @@ $(DEPDIR):
 # And the rest of the make file targets
 #
 .PHONY=all
-all:		$(PDP_PROCESSOR_TARGET)
+all:		$(PDP_PROCESSOR_TARGET) $(PPC_RADAR_OPTIONS_TARGET)
 
 $(PDP_PROCESSOR_TARGET): $(DEPDIR) $(PDP_PROCESSOR_OBJECTS) ../ppc/libbaltrad-ppc.so
 	$(LDSHARED) -o $@ $(PDP_PROCESSOR_OBJECTS) $(LDFLAGS) $(LIBRARIES)
+
+$(PPC_RADAR_OPTIONS_TARGET): $(DEPDIR) $(PPC_RADAR_OPTIONS_OBJECTS) ../ppc/libbaltrad-ppc.so
+	$(LDSHARED) -o $@ $(PPC_RADAR_OPTIONS_OBJECTS) $(LDFLAGS) $(LIBRARIES)
 
 .PHONY=install
 install:
@@ -76,6 +83,7 @@ clean:
 .PHONY=distclean		 
 distclean:	clean
 	@\rm -f $(PDP_PROCESSOR_TARGET)
+	@\rm -f $(PPC_RADAR_OPTIONS_TARGET)
 
 # --------------------------------------------------------------------
 # Rules
