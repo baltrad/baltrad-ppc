@@ -1,13 +1,87 @@
 <?xml version='1.0' encoding='UTF-8'?>
+<!-- Defines all options for usage within the PPC processing
+  -- The options are read in same order as defined below. This means that if using default attribute, the
+  -- referred radaroptions must have been read before the referral is done.
+  -- If no 'default' attribute is specified, the default attributes as defined in the radar options class are used.
+  -- It is possible to define chained option overrides.
+  -- E.g.
+  -- <radaroptions name="x">
+  --   <kdpUp      value="1.0" />
+  --   <kdpDown    value="2.0" /> 
+  -- </radaroptions>
+  -- <radaroptions name="y" default="x">
+  --   <kdpUp      value="3.0" />
+  --   <nodata     value="123.0" />
+  -- </radaroptions>
+  -- <radaroptions name="z" default="y">
+  --   <kdpDown    value="4.0" /> 
+  -- </radaroptions>
+  --
+  -- In this scenario:
+  -- *  x will use kdpUp=1.0, kdpDown=2.0 & nodata = -999.0
+  -- *  y will use kdpUp=3.0, kdpDown=2.0 & nodata = 123.0
+  -- *  z will use KdpUp=3.0, kdpDown=4.0 & nodata = 123.0
+  --
+  -- The attributes are are defined as follows:
+  -- parametersUZ - parameters for TH, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2  and the derived values will be X1=X2-Delta1, X3=X4-Delta2
+  -- parametersVEL - parameters for VRADH, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2  and the derived values will be X1=X2-Delta1, X3=X4-Delta2
+  -- parametersTextPHIDP - parameters for the PHIDP texture, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2  and the derived values will be X1=X2-Delta1, X3=X4-Delta2
+  -- parametersRHV - parameters for RHOHV, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2  and the derived values will be X1=X2-Delta1, X3=X4-Delta2
+  -- parametersTextUZ - parameters for the TH texture, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2  and the derived values will be X1=X2-Delta1, X3=X4-Delta2
+  -- parametersClutterMap - parameters for the clutter map, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2  and the derived values will be X1=X2-Delta1, X3=X4-Delta2
+  -- nodata - nodata to used in most products
+  -- minDBZ - min DBZ threshold in the clutter correction
+  -- qualityThreshold - quality threshold in the clutter correction
+  -- preprocessZThreshold - preprocessing Z threshold before starting actual processing
+  -- residualMinZClutterThreshold - min z clutter threshold during residual clutter filtering
+  -- residualThresholdZ - min Z threshold in the residual clutter filtering
+  -- residualThresholdTexture - texture threshold in the residual clutter filtering
+  -- residualClutterNodata - the nodata value to be used when creating the residual clutter image used for creating the mask
+  -- residualClutterMaskNodata - Nodata value for the residual clutter mask
+  -- residualClutterTextureFilteringMaxZ - Max Z value when creating the residual clutter mask, anything higher will be set to min value
+  -- residualFilterBinSize - number of bins used in the window when creating the residual mask
+  -- residualFilterRaySize - number of rays used in the window when creating the residual mask
+  -- minZMedfilterThreshold - min z threshold used in the median filter that is used by the residual clutter filter
+  -- processingTextureThreshold - threshold for the texture created in the pdp processing
+  -- minWindow - min window size
+  -- pdpRWin1 - pdp ray window 1
+  -- pdpRWin2 - pdp ray window 2
+  -- pdpNrIterations - number of iterations in pdp processing
+  -- kdpUp - Maximum allowed value of Kdp
+  -- kdpUp - Maximum allowed value of Kdp
+  -- kdpDown - Minimum allowed value of kdp
+  -- kdpStdThreshold - Kdp STD threshold 
+  -- BB - BB value used in the zphi part of the pdp processing
+  -- thresholdPhidp - threshold for PHIDP in the pdp processing
+  -- minAttenuationMaskRHOHV - min RHOHV value for marking value as 1 in the attenuation mask
+  -- minAttenuationMaskKDP - min KDP value for marking value as 1 in the attenuation mask
+  -- minAttenuationMaskTH - min TH value for marking value as 1 in the attenuation mask
+  -- attenuationGammaH - gamma h value used in the attenuation
+  -- attenuationAlpha - alpha value used in the attenuation
+  -- attenuationPIAminZ - min PIA Z value in attenuation process
+  -- requestedFieldMask - '|' separated list of flags. Can be:
+  --  - P_TH_CORR
+  --  - P_ATT_TH_CORR
+  --  - P_DBZH_CORR
+  --  - P_ATT_DBZH_CORR
+  --  - P_KDP_CORR
+  --  - P_RHOHV_CORR
+  --  - P_PHIDP_CORR
+  --  - P_ZDR_CORR
+  --  - P_ZPHI_CORR
+  --  - Q_RESIDUAL_CLUTTER_MASK
+  --  - Q_ATTENUATION_MASK
+  --  - Q_ATTENUATION 
+  -->
 <ppc-options>
   <radaroptions name="default">
     <!-- Weight | X2   |  X3  | Delta1  | Delta2   X1=X2-Delta1, X3=X4-Delta2-->
-    <parametersUZUZ 				value="0.00,30.00,90.00,62.00,20.00" />
-    <parametersUZVEL				value="0.30,-0.90,0.90,0.15,0.15" />
-    <parametersUZTextPHIDP			value="0.80,15.00,40.00,5.00,40.00" />
-    <parametersUZRHV				value="0.20,0.00,0.60,0.00,0.10" />
-    <parametersUZTextUZ				value="0.30,20.00,60.00,5.00,10.00" />
-    <parametersUZClutterMap			value="0.90,5.00,70.00,20.00,60.00" />
+    <parametersUZ 					value="0.00,30.00,90.00,62.00,20.00" />
+    <parametersVEL					value="0.30,-0.90,0.90,0.15,0.15" />
+    <parametersTextPHIDP			value="0.80,15.00,40.00,5.00,40.00" />
+    <parametersRHV					value="0.20,0.00,0.60,0.00,0.10" />
+    <parametersTextUZ				value="0.30,20.00,60.00,5.00,10.00" />
+    <parametersClutterMap			value="0.90,5.00,70.00,20.00,60.00" />
     
     <minWindow 						value="11" />
     <nodata							value="-999.0" />
@@ -43,52 +117,6 @@
     <attenuationAlpha				value="0.2" />
     <attenuationPIAminZ				value="-30" />
 
-	<requestedFieldMask				value="DBZH_CORR|ATT_DBZH_CORR|PHIDP_CORR|QUALITY_RESIDUAL_CLUTTER_MASK" />
+	<requestedFields				value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
   </radaroptions>
 </ppc-options>
-
-<!--
-  double parUZ[5]; /**< parameters for TH */
-  double parVel[5]; /**< parameters for VRADH */
-  double parTextPHIDP[5]; /**< parameters for the PHIDP texture */
-  double parRHV[5]; /**< parameters for RHOHV */
-  double parTextUZ[5]; /**< parameters for the TH texture */
-  double parClutterMap[5]; /**< parameters for the clutter map */
-  double nodata; /**< nodata to used in most products */
-  double minDBZ; /**< min DBZ threshold in the clutter correction */
-  double qualityThreshold; /**< quality threshold in the clutter correction */
-  double preprocessZThreshold; /**< preprocessing Z threshold before starting actual processing */
-  double residualMinZClutterThreshold; /**< min z clutter threshold during residual clutter filtering */
-  double residualThresholdZ; /**< min Z threshold in the residual clutter filtering */
-  double residualThresholdTexture; /**< texture threshold in the residual clutter filtering */
-  double residualClutterNodata; /**< the nodata value to be used when creating the residual clutter image used for creating the mask */
-  double residualClutterMaskNodata; /** Nodata value for the residual clutter mask */
-  double residualClutterTextureFilteringMaxZ; /**< Max Z value when creating the residual clutter mask, anything higher will be set to min value */
-  long residualFilterBinSize; /**< number of bins used in the window when creating the residual mask */
-  long residualFilterRaySize; /**< number of rays used in the window when creating the residual mask */
-
-  double minZMedfilterThreshold; /**< min z threshold used in the median filter that is used by the residual clutter filter */
-  double processingTextureThreshold; /**< threshold for the texture created in the pdp processing*/
-
-  long minWindow; /**< min window size */
-  double pdpRWin1; /**< pdp ray window 1 */
-  double pdpRWin2; /**< pdp ray window 1 */
-  long pdpNrIterations; /**< number of iterations in pdp processing */
-
-  double kdpUp; /**< Maximum allowed value of Kdp */
-  double kdpDown; /** Minimum allowed value of kdp */
-  double kdpStdThreshold; /**< Kdp STD threshold */
-  double BB; /**< BB value used in the zphi part of the pdp processing */
-  double thresholdPhidp; /**< threshold for PHIDP in the pdp processing */
-  double minAttenuationMaskRHOHV; /**< min RHOHV value for marking value as 1 in the attenuation mask */
-  double minAttenuationMaskKDP; /**< min KDP value for marking value as 1 in the attenuation mask */
-  double minAttenuationMaskTH;/**< min TH value for marking value as 1 in the attenuation mask */
-  double attenuationGammaH; /**< gamma h value used in the attenuation */
-  double attenuationAlpha;  /**< alpha value used in the attenuation */
-  double attenuationPIAminZ; /**< min PIA Z value in attenuation process */
-
-  int requestedFieldMask; /**< the fields that should be added to the result */
-  
-  
-  
-  -->

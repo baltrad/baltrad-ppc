@@ -38,7 +38,8 @@ along with baltrad-ppc.  If not, see <http://www.gnu.org/licenses/>.
  */
 struct _PpcRadarOptions_t {
   RAVE_OBJECT_HEAD /** Always on top */
-
+  char* name; /**< name of owner for these options */
+  char* defaultName; /**< name of default setting for these options */
   double parUZ[5]; /**< parameters for TH */
   double parVel[5]; /**< parameters for VRADH */
   double parTextPHIDP[5]; /**< parameters for the PHIDP texture */
@@ -78,7 +79,7 @@ struct _PpcRadarOptions_t {
   double attenuationAlpha;  /**< alpha value used in the attenuation */
   double attenuationPIAminZ; /**< min PIA Z value in attenuation process */
 
-  char* requestedFieldMask; /**< the fields that should be added to the result */
+  int requestedFieldMask; /**< the fields that should be added to the result */
 };
 //                                          Weight | X2   |  X3  | Delta1  | Delta2
 // X1=X2-Delta1, X3=X4-Delta2
@@ -96,6 +97,8 @@ static double DEFAULT_PAR_CLUTTER_MAP[5] = {0.90,   5.00,  70.00,  20.00,  60.00
 static int PpcRadarOptions_constructor(RaveCoreObject* obj)
 {
   PpcRadarOptions_t* options = (PpcRadarOptions_t*)obj;
+  options->name = NULL;
+  options->defaultName = NULL;
   memcpy(options->parUZ,  DEFAULT_PAR_UZ, sizeof(options->parUZ));
   memcpy(options->parVel, DEFAULT_PAR_VEL, sizeof(options->parVel));
   memcpy(options->parTextPHIDP, DEFAULT_PAR_TEXT_PHIDP, sizeof(options->parTextPHIDP));
@@ -114,10 +117,10 @@ static int PpcRadarOptions_constructor(RaveCoreObject* obj)
   options->residualThresholdTexture = 20.0;
   options->residualFilterBinSize = 1;
   options->residualFilterRaySize = 1;
+  options->residualClutterTextureFilteringMaxZ = 70.0;
 
   options->minZMedfilterThreshold = -30.0;
   options->processingTextureThreshold = 10.0;
-  options->residualClutterTextureFilteringMaxZ = 70.0;
   options->pdpRWin1 = 3.5;
   options->pdpRWin2 = 1.5;
   options->pdpNrIterations = 2;
@@ -135,7 +138,7 @@ static int PpcRadarOptions_constructor(RaveCoreObject* obj)
   options->attenuationAlpha = 0.2;
   options->attenuationPIAminZ = -30;
 
-  options->requestedFieldMask = RAVE_STRDUP("P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|Q_RESIDUAL_CLUTTER_MASK");
+  options->requestedFieldMask = PpcRadarOptions_DBZH_CORR|PpcRadarOptions_ATT_DBZH_CORR|PpcRadarOptions_PHIDP_CORR|PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK;
 
   return 1;
 }
@@ -146,7 +149,8 @@ static int PpcRadarOptions_constructor(RaveCoreObject* obj)
 static void PpcRadarOptions_destructor(RaveCoreObject* obj)
 {
   PpcRadarOptions_t* options = (PpcRadarOptions_t*)obj;
-  RAVE_FREE(options->requestedFieldMask);
+  RAVE_FREE(options->name);
+  RAVE_FREE(options->defaultName);
 }
 
 /**
@@ -195,36 +199,91 @@ static int PpcRadarOptions_copyconstructor(RaveCoreObject* obj, RaveCoreObject* 
   this->attenuationAlpha = src->attenuationAlpha;
   this->attenuationPIAminZ = src->attenuationPIAminZ;
 
-  this->requestedFieldMask = RAVE_STRDUP(src->requestedFieldMask);
+  this->requestedFieldMask = src->requestedFieldMask;
+
+  this->name = NULL;
+  this->defaultName = NULL;
+  if (src->name != NULL) {
+    this->name = RAVE_STRDUP(src->name);
+    if (this->name == NULL) {
+      RAVE_ERROR0("Failed to duplicate option name");
+      goto done;
+    }
+  }
+  if (src->defaultName != NULL) {
+    this->defaultName = RAVE_STRDUP(src->defaultName);
+    if (this->defaultName == NULL) {
+      RAVE_ERROR0("Failed to duplicate default name");
+      goto done;
+    }
+  }
+  return 1;
+done:
+  RAVE_FREE(this->name);
+  RAVE_FREE(this->defaultName);
+  return 0;
 }
 
 /*@} End of Private functions */
 
 /*@{ Interface functions */
-int PpcRadarOptions_setRequestedFields(PpcRadarOptions_t* self, const char* fieldmask)
+int PpcRadarOptions_setName(PpcRadarOptions_t* self, const char* name)
 {
   int result = 0;
   char* tmp = NULL;
   RAVE_ASSERT((self != NULL), "self == NULL");
-  if (fieldmask == NULL) {
-    RAVE_ERROR0("Must provide a string for requested fields");
-    goto done;
+
+  if (name != NULL) {
+    tmp = RAVE_STRDUP(name);
+    if (tmp == NULL) {
+      goto done;
+    }
   }
-  tmp = RAVE_STRDUP(fieldmask);
-  if (tmp == NULL) {
-    RAVE_ERROR0("Failed to duplicate field mask");
-    goto done;
+  RAVE_FREE(self->name);
+  self->name = tmp;
+done:
+  return result;
+}
+
+const char* PpcRadarOptions_getName(PpcRadarOptions_t* self)
+{
+  return (const char*)self->name;
+}
+
+int PpcRadarOptions_setDefaultName(PpcRadarOptions_t* self, const char* name)
+{
+  int result = 0;
+  char* tmp = NULL;
+  RAVE_ASSERT((self != NULL), "self == NULL");
+
+  if (name != NULL) {
+    tmp = RAVE_STRDUP(name);
+    if (tmp == NULL) {
+      goto done;
+    }
   }
-  RAVE_FREE(self->requestedFieldMask);
-  self->requestedFieldMask = tmp;
+  RAVE_FREE(self->defaultName);
+  self->defaultName = tmp;
   result = 1;
 done:
   return result;
 }
 
-const char* PpcRadarOptions_getRequestedFields(PpcRadarOptions_t* self)
+const char* PpcRadarOptions_getDefaultName(PpcRadarOptions_t* self)
 {
-  return (const char*)self->requestedFieldMask;
+  return (const char*)self->defaultName;
+}
+
+
+void PpcRadarOptions_setRequestedFields(PpcRadarOptions_t* self, int fieldmask)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  self->requestedFieldMask = fieldmask;
+}
+
+int PpcRadarOptions_getRequestedFields(PpcRadarOptions_t* self)
+{
+  return self->requestedFieldMask;
 }
 
 void PpcRadarOptions_setKdpUp(PpcRadarOptions_t* self, double v)
@@ -284,6 +343,7 @@ void PpcRadarOptions_setThresholdPhidp(PpcRadarOptions_t* self, double v)
 double PpcRadarOptions_getThresholdPhidp(PpcRadarOptions_t* self)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   return self->thresholdPhidp;
 }
 
@@ -410,7 +470,6 @@ void PpcRadarOptions_setParametersRHV(PpcRadarOptions_t* self, double weight, do
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
   PpcRadarOptionsInternal_setParameters(self->parRHV, weight, X2, X3, delta1, delta2);
-
 }
 
 void PpcRadarOptions_getParametersTEXT_UZ(PpcRadarOptions_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
@@ -424,7 +483,6 @@ void PpcRadarOptions_setParametersTEXT_UZ(PpcRadarOptions_t* self, double weight
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
   PpcRadarOptionsInternal_setParameters(self->parTextUZ, weight, X2, X3, delta1, delta2);
-
 }
 
 void PpcRadarOptions_getParametersCLUTTER_MAP(PpcRadarOptions_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
@@ -438,7 +496,6 @@ void PpcRadarOptions_setParametersCLUTTER_MAP(PpcRadarOptions_t* self, double we
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
   PpcRadarOptionsInternal_setParameters(self->parClutterMap, weight, X2, X3, delta1, delta2);
-
 }
 
 
@@ -451,6 +508,7 @@ double PpcRadarOptions_getMeltingLayerBottomHeight(PolarScan_t* scan)
 void PpcRadarOptions_setNodata(PpcRadarOptions_t* self, double nodata)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   self->nodata = nodata;
 }
 
@@ -463,6 +521,7 @@ double PpcRadarOptions_getNodata(PpcRadarOptions_t* self)
 void PpcRadarOptions_setMinDBZ(PpcRadarOptions_t* self, double minv)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   self->minDBZ = minv;
 }
 
@@ -475,6 +534,7 @@ double PpcRadarOptions_getMinDBZ(PpcRadarOptions_t* self)
 void PpcRadarOptions_setQualityThreshold(PpcRadarOptions_t* self, double minv)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   self->qualityThreshold = minv;
 }
 
@@ -487,6 +547,7 @@ double PpcRadarOptions_getQualityThreshold(PpcRadarOptions_t* self)
 void PpcRadarOptions_setPreprocessZThreshold(PpcRadarOptions_t* self, double minv)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   self->preprocessZThreshold = minv;
 }
 
@@ -499,6 +560,7 @@ double PpcRadarOptions_getPreprocessZThreshold(PpcRadarOptions_t* self)
 void PpcRadarOptions_setResidualMinZClutterThreshold(PpcRadarOptions_t* self, double minv)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   self->residualMinZClutterThreshold = minv;
 }
 

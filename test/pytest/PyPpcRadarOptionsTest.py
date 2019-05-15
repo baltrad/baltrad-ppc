@@ -274,25 +274,31 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
         
     self.assertTrue("requestedFields" in dir(a))
 
-    self.assertEqual("P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|Q_RESIDUAL_CLUTTER_MASK", a.requestedFields)
+    self.assertEqual(_ppcradaroptions.P_DBZH_CORR |_ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.P_PHIDP_CORR | _ppcradaroptions.Q_RESIDUAL_CLUTTER_MASK, a.requestedFields);
     
-    a.requestedFields = "P_KDP_CORR|P_PHIDP_CORR|P_ZDR_CORR"
+    a.requestedFields = _ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_PHIDP_CORR | _ppcradaroptions.P_ZDR_CORR
 
-    self.assertEqual("P_KDP_CORR|P_PHIDP_CORR|P_ZDR_CORR", a.requestedFields)
+    self.assertEqual(_ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_PHIDP_CORR | _ppcradaroptions.P_ZDR_CORR, a.requestedFields);
+
+    self.assertNotEqual(_ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_PHIDP_CORR | _ppcradaroptions.P_ZDR_CORR | _ppcradaroptions.P_ZPHI_CORR, a.requestedFields)
+        
+    a.requestedFields = a.requestedFields | _ppcradaroptions.P_ZPHI_CORR
+
+    self.assertEqual(_ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_PHIDP_CORR | _ppcradaroptions.P_ZDR_CORR | _ppcradaroptions.P_ZPHI_CORR, a.requestedFields);
 
   def testAvailableResultSelectors(self):
-    self.assertEqual("P_TH_CORR", _ppcradaroptions.P_TH_CORR)
-    self.assertEqual("P_ATT_TH_CORR", _ppcradaroptions.P_ATT_TH_CORR)
-    self.assertEqual("P_DBZH_CORR", _ppcradaroptions.P_DBZH_CORR)
-    self.assertEqual("P_ATT_DBZH_CORR", _ppcradaroptions.P_ATT_DBZH_CORR)
-    self.assertEqual("P_KDP_CORR", _ppcradaroptions.P_KDP_CORR)
-    self.assertEqual("P_RHOHV_CORR", _ppcradaroptions.P_RHOHV_CORR)
-    self.assertEqual("P_PHIDP_CORR", _ppcradaroptions.P_PHIDP_CORR)
-    self.assertEqual("P_ZDR_CORR", _ppcradaroptions.P_ZDR_CORR)
-    self.assertEqual("P_ZPHI_CORR", _ppcradaroptions.P_ZPHI_CORR)
-    self.assertEqual("Q_RESIDUAL_CLUTTER_MASK", _ppcradaroptions.Q_RESIDUAL_CLUTTER_MASK)
-    self.assertEqual("Q_ATTENUATION_MASK", _ppcradaroptions.Q_ATTENUATION_MASK)
-    self.assertEqual("Q_ATTENUATION", _ppcradaroptions.Q_ATTENUATION)
+    self.assertEqual(1, _ppcradaroptions.P_TH_CORR)
+    self.assertEqual(1<<1, _ppcradaroptions.P_ATT_TH_CORR)
+    self.assertEqual(1<<2, _ppcradaroptions.P_DBZH_CORR)
+    self.assertEqual(1<<3, _ppcradaroptions.P_ATT_DBZH_CORR)
+    self.assertEqual(1<<4, _ppcradaroptions.P_KDP_CORR)
+    self.assertEqual(1<<5, _ppcradaroptions.P_RHOHV_CORR)
+    self.assertEqual(1<<6, _ppcradaroptions.P_PHIDP_CORR)
+    self.assertEqual(1<<7, _ppcradaroptions.P_ZDR_CORR)
+    self.assertEqual(1<<8, _ppcradaroptions.P_ZPHI_CORR)
+    self.assertEqual(1<<9, _ppcradaroptions.Q_RESIDUAL_CLUTTER_MASK)
+    self.assertEqual(1<<10, _ppcradaroptions.Q_ATTENUATION_MASK)
+    self.assertEqual(1<<11, _ppcradaroptions.Q_ATTENUATION)
 
   def testResidualMinZClutterThreshold(self):
     a = _ppcradaroptions.new()

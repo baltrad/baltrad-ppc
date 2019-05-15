@@ -46,6 +46,10 @@ PPC_RADAR_OPTIONS_SOURCE= pyppcradaroptions.c
 PPC_RADAR_OPTIONS_OBJECTS= $(PPC_RADAR_OPTIONS_SOURCE:.c=.o)
 PPC_RADAR_OPTIONS_TARGET= _ppcradaroptions.so
 
+PPC_OPTIONS_SOURCE= pyppcoptions.c
+PPC_OPTIONS_OBJECTS= $(PPC_OPTIONS_SOURCE:.c=.o)
+PPC_OPTIONS_TARGET= _ppcoptions.so
+
 MAKECDEPEND=$(CC) -MM $(CFLAGS) -MT '$(@D)/$(@F)' -o $(DF).d $<
 
 DEPDIR=.dep
@@ -59,7 +63,7 @@ $(DEPDIR):
 # And the rest of the make file targets
 #
 .PHONY=all
-all:		$(PDP_PROCESSOR_TARGET) $(PPC_RADAR_OPTIONS_TARGET)
+all:		$(PDP_PROCESSOR_TARGET) $(PPC_RADAR_OPTIONS_TARGET) $(PPC_OPTIONS_TARGET)
 
 $(PDP_PROCESSOR_TARGET): $(DEPDIR) $(PDP_PROCESSOR_OBJECTS) ../ppc/libbaltrad-ppc.so
 	$(LDSHARED) -o $@ $(PDP_PROCESSOR_OBJECTS) $(LDFLAGS) $(LIBRARIES)
@@ -67,10 +71,15 @@ $(PDP_PROCESSOR_TARGET): $(DEPDIR) $(PDP_PROCESSOR_OBJECTS) ../ppc/libbaltrad-pp
 $(PPC_RADAR_OPTIONS_TARGET): $(DEPDIR) $(PPC_RADAR_OPTIONS_OBJECTS) ../ppc/libbaltrad-ppc.so
 	$(LDSHARED) -o $@ $(PPC_RADAR_OPTIONS_OBJECTS) $(LDFLAGS) $(LIBRARIES)
 
+$(PPC_OPTIONS_TARGET): $(DEPDIR) $(PPC_OPTIONS_OBJECTS) ../ppc/libbaltrad-ppc.so
+	$(LDSHARED) -o $@ $(PPC_OPTIONS_OBJECTS) $(LDFLAGS) $(LIBRARIES)
+
 .PHONY=install
 install:
 	@mkdir -p ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
 	@cp -v -f $(PDP_PROCESSOR_TARGET) ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
+	@cp -v -f $(PPC_RADAR_OPTIONS_TARGET) ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
+	@cp -v -f $(PPC_OPTIONS_TARGET) ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
 	@cp -v -f *.py ${DESTDIR}${prefix}/share/baltrad-ppc/pyppc
 	@-mkdir -p ${DESTDIR}$(SITEPACK_PYTHON)
 	@-echo "$(prefix)/share/baltrad-ppc/pyppc" > "${DESTDIR}$(SITEPACK_PYTHON)/baltrad-ppc.pth"
@@ -84,6 +93,7 @@ clean:
 distclean:	clean
 	@\rm -f $(PDP_PROCESSOR_TARGET)
 	@\rm -f $(PPC_RADAR_OPTIONS_TARGET)
+	@\rm -f $(PPC_OPTIONS_TARGET)
 
 # --------------------------------------------------------------------
 # Rules

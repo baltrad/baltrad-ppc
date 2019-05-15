@@ -25,9 +25,8 @@ along with baltrad-ppc.  If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef PPC_OPTIONS_H
 #define PPC_OPTIONS_H
+#include "ppc_radar_options.h"
 
-#include "polarvolume.h"
-#include "rave_data2d.h"
 /**
  * Defines a transformer
  */
@@ -40,6 +39,14 @@ extern RaveCoreObjectType PpcOptions_TYPE;
 
 PpcOptions_t* PpcOptions_load(const char* filename);
 
-const char* PpcOptions_getRadarOptions(PpcOptions_t* self, const char* name);
+PpcRadarOptions_t* PpcOptions_getRadarOptions(PpcOptions_t* self, const char* name);
+
+/**
+ * Adds one radar option to the option table. The radar option name must be set.
+ * @param[in] self - self
+ * @param[in] options - options
+ * @return 1 on success otherwise 0
+ */
+int PpcOptions_addRadarOptions(PpcOptions_t* self, PpcRadarOptions_t* options);
 
 #endif /* PPC_OPTIONS_H_ */

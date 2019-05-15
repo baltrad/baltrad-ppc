@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ppc-options>
+  <radaroptions name="default">
+    <!-- Weight | X2   |  X3  | Delta1  | Delta2   X1=X2-Delta1, X3=X4-Delta2-->
+    <parametersUZ 					value="0.1,0.2,0.3,0.4,0.5" />
+    <parametersVEL					value="1.0,2.0,3.0,4.0,5.0" />
+    <parametersTextPHIDP			value="-0.1,-0.2,-0.3,-0.4,-0.5" />
+    <parametersRHV					value="-1.0,-2.0,-3.0,-4.0,-5.0" />
+    <parametersTextUZ				value="0.10,0.4,-0.1,-0.4,2.0" />
+    <parametersClutterMap			value="-0.10,-0.4,0.1,0.4,-2.0" />
+    
+    <minWindow 						value="2" />
+    <nodata							value="-77.7" />
+    <minDBZ							value="99.7" />
+    <qualityThreshold				value="0.1" />
+    <preprocessZThreshold			value="-2.0" />
+    
+    <residualMinZClutterThreshold	value="111.1" />
+    <residualThresholdZ				value="111.2" />
+    <residualThresholdTexture		value="111.3" />
+    <residualClutterNodata			value="111.4" />
+    <residualClutterMaskNodata		value="111.5" />
+    <residualClutterTextureFilteringMaxZ	value="111.6" />
+    <residualFilterBinSize			value="7" />
+    <residualFilterRaySize			value="8" />
+    
+    <minZMedfilterThreshold			value="222.1" />
+    <processingTextureThreshold		value="222.2" />
+    <pdpRWin1						value="222.3" />
+    <pdpRWin2						value="222.4" />
+    <pdpNrIterations				value="5" />
+    <kdpUp							value="222.6" />
+    <kdpDown						value="222.7" />
+    <kdpStdThreshold				value="222.8" />
+    <BB 							value="222.9" />
+    <thresholdPhidp					value="222.11" />
+
+    <minAttenuationMaskRHOHV		value="333.1" />
+    <minAttenuationMaskKDP			value="333.2" />
+    <minAttenuationMaskTH			value="333.3" />
+    <attenuationGammaH				value="333.4" />
+    <attenuationAlpha				value="333.5" />
+    <attenuationPIAminZ				value="333.6" />
+
+	<requestedFields				value="P_TH_CORR|P_PHIDP_CORR|Q_ATTENUATION_MASK" />
+  </radaroptions>
+
+  <radaroptions name="uses_standard" /> <!-- Uses standard default values -->
+
+  <radaroptions name="uses_default" default="default" /> <!-- Uses default setting above -->
+  
+  <radaroptions name="modified_default" default="default" > <!-- Uses default above but with some modified values-->
+    <kdpUp							value="444.1" />
+    <kdpDown						value="444.2" />
+    <kdpStdThreshold				value="444.3" />
+  </radaroptions>
+
+  <radaroptions name="overrided_default" default="modified_default" > <!-- Uses default above but with some modified values-->
+    <kdpUp							value="555.1" />
+  </radaroptions>
+  
+  <radaroptions name="all_requested_fields">
+	<requestedFields				value="P_TH_CORR|P_ATT_TH_CORR|P_DBZH_CORR|P_ATT_DBZH_CORR|P_KDP_CORR|P_RHOHV_CORR|P_PHIDP_CORR|P_ZDR_CORR|P_ZPHI_CORR|Q_RESIDUAL_CLUTTER_MASK|Q_ATTENUATION_MASK|Q_ATTENUATION" />
+  </radaroptions>  
+</ppc-options>

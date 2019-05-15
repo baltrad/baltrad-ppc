@@ -37,19 +37,62 @@ typedef struct _PpcRadarOptions_t PpcRadarOptions_t;
  * Type definition to use when creating a rave object.
  */
 extern RaveCoreObjectType PpcRadarOptions_TYPE;
+
+
+#define PpcRadarOptions_TH_CORR        (1)       /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected TH to result */
+#define PpcRadarOptions_ATT_TH_CORR    (1 << 1)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected and attenuated TH to result */
+#define PpcRadarOptions_DBZH_CORR      (1 << 2)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected DBZH to result */
+#define PpcRadarOptions_ATT_DBZH_CORR  (1 << 3)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected and attenuated DBZH to result */
+#define PpcRadarOptions_KDP_CORR       (1 << 4)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected KDP to result */
+#define PpcRadarOptions_RHOHV_CORR     (1 << 5)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected RHOHV to result */
+#define PpcRadarOptions_PHIDP_CORR     (1 << 6)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected PHIDP to result */
+#define PpcRadarOptions_ZDR_CORR       (1 << 7)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected ZDR to result */
+#define PpcRadarOptions_ZPHI_CORR      (1 << 8)  /**< Used by @ref #PpcRadarOptions_setRequestedFields Add Corrected ZPHI to result */
+#define PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK (1 << 9) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for residual clutter flag */
+#define PpcRadarOptions_QUALITY_ATTENUATION_MASK (1 << 10) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for attenuation mask */
+#define PpcRadarOptions_QUALITY_ATTENUATION (1 << 11) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for actual attenuation */
+
 /**
- * Sets the field mask where each parameter should be separated by a "|"
- * For example: P_CORR_TH|P_CORR_KDP
+ * Set the name of the owner of these options
+ * @param[in] self - self
+ * @param[in] name - the name of the owner
+ * @return 1 on success otherwise 0
+ */
+int PpcRadarOptions_setName(PpcRadarOptions_t* self, const char* name);
+
+/**
+ * @returns the name of the owner of these options
+ * @param[in] self - self
+ */
+const char* PpcRadarOptions_getName(PpcRadarOptions_t* self);
+
+/**
+ * Sets the name of the default setting if there is one.
+ * @param[in] self - self
+ * @param[in] name - the name of the default setting
+ * @return 1 on success otherwise 0
+ */
+int PpcRadarOptions_setDefaultName(PpcRadarOptions_t* self, const char* name);
+
+/**
+ * @returns the name of the default setting if there is any
+ * @param[in] self - self
+ */
+const char* PpcRadarOptions_getDefaultName(PpcRadarOptions_t* self);
+
+/**
+ * Sets the field mask which should be bitwised ored from the PdpProcessor field defines
+ * For example: PpcRadarOptions_CORR_TH | PpcRadarOptions_CORR_KDP
  * @param[in] self - self
  * @param[in] fieldmask - the bit mask
  */
-int PpcRadarOptions_setRequestedFields(PpcRadarOptions_t* self, const char* fieldmask);
+void PpcRadarOptions_setRequestedFields(PpcRadarOptions_t* self, int fieldmask);
 
 /**
  * @param[in] self - self
  * @returns the field mask
  */
-const char* PpcRadarOptions_getRequestedFields(PpcRadarOptions_t* self);
+int PpcRadarOptions_getRequestedFields(PpcRadarOptions_t* self);
 
 /**
  * Sets the upper threshold for the generated kdp field

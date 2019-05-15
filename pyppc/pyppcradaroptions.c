@@ -151,6 +151,8 @@ static PyObject* _pyppcradaroptions_new(PyObject* self, PyObject* args)
  */
 static struct PyMethodDef _pyppcradaroptions_methods[] =
 {
+  {"name", NULL},
+  {"defaultName", NULL},
   {"minWindow", NULL},
   {"parametersUZ", NULL},
   {"parametersVEL", NULL},
@@ -195,7 +197,11 @@ static struct PyMethodDef _pyppcradaroptions_methods[] =
  */
 static PyObject* _pyppcradaroptions_getattro(PyPpcRadarOptions* self, PyObject* name)
 {
-  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
+  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "name") == 0) {
+    return PyString_FromString(PpcRadarOptions_getName(self->options));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "defaultName") == 0) {
+      return PyString_FromString(PpcRadarOptions_getDefaultName(self->options));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
     return PyInt_FromLong(PpcRadarOptions_getMinWindow(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersUZ") == 0) {
     double weight, X2, X3, delta1, delta2;
@@ -234,7 +240,7 @@ static PyObject* _pyppcradaroptions_getattro(PyPpcRadarOptions* self, PyObject* 
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpStdThreshold") == 0) {
     return PyFloat_FromDouble(PpcRadarOptions_getKdpStdThreshold(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "requestedFields") == 0) {
-    return PyString_FromString(PpcRadarOptions_getRequestedFields(self->options));
+    return PyLong_FromLong(PpcRadarOptions_getRequestedFields(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualMinZClutterThreshold") == 0) {
     return PyFloat_FromDouble(PpcRadarOptions_getResidualMinZClutterThreshold(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualThresholdZ") == 0) {
@@ -293,7 +299,31 @@ static int _pyppcradaroptions_setattro(PyPpcRadarOptions* self, PyObject* name, 
   if (name == NULL) {
     goto done;
   }
-  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
+  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "name") == 0) {
+    if (PyString_Check(val)) {
+      if (!PpcRadarOptions_setName(self->options, PyString_AsString(val))) {
+        raiseException_gotoTag(done, PyExc_RuntimeError, "Failed to set name");
+      }
+    } else if (val == Py_None) {
+      if (!PpcRadarOptions_setName(self->options, NULL)) {
+        raiseException_gotoTag(done, PyExc_RuntimeError, "Failed to clear name");
+      }
+    } else {
+      raiseException_gotoTag(done, PyExc_TypeError, "name must be of type string");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "defaultName") == 0) {
+    if (PyString_Check(val)) {
+      if (!PpcRadarOptions_setDefaultName(self->options, PyString_AsString(val))) {
+        raiseException_gotoTag(done, PyExc_RuntimeError, "Failed to set default name");
+      }
+    } else if (val == Py_None) {
+      if (!PpcRadarOptions_setDefaultName(self->options, NULL)) {
+        raiseException_gotoTag(done, PyExc_RuntimeError, "Failed to clear default name");
+      }
+    } else {
+      raiseException_gotoTag(done, PyExc_TypeError, "name must be of type string");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
     if (PyLong_Check(val)) {
       PpcRadarOptions_setMinWindow(self->options, PyLong_AsLong(val));
     } else {
@@ -390,16 +420,12 @@ static int _pyppcradaroptions_setattro(PyPpcRadarOptions* self, PyObject* name, 
       raiseException_gotoTag(done, PyExc_ValueError, "kdpStdThreshold must be of type float or long");
     }
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "requestedFields") == 0) {
-    if (PyString_Check(val)) {
-      if (!PpcRadarOptions_setRequestedFields(self->options, PyString_AsString(val))) {
-        raiseException_gotoTag(done, PyExc_RuntimeError, "requestedFields could not be set");
-      }
-    } else if (val == Py_None) {
-      if (!PpcRadarOptions_setRequestedFields(self->options, "")) {
-        raiseException_gotoTag(done, PyExc_RuntimeError, "requestedFields could not be set");
-      }
+    if (PyLong_Check(val)) {
+      PpcRadarOptions_setRequestedFields(self->options, (int)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PpcRadarOptions_setRequestedFields(self->options, (int)PyInt_AsLong(val));
     } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "requestedFields must be string type");
+      raiseException_gotoTag(done, PyExc_ValueError, "requestedFields must be of integer");
     }
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualMinZClutterThreshold") == 0) {
     if (PyFloat_Check(val)) {
@@ -688,10 +714,10 @@ static PyMethodDef functions[] = {
  * @param[in] name - the name of the constant
  * @param[in] value - the value
  */
-static void add_string_constant(PyObject* dictionary, const char* name, const char* value)
+static void add_long_constant(PyObject* dictionary, const char* name, long value)
 {
   PyObject* tmp = NULL;
-  tmp = PyString_FromString(value);
+  tmp = PyInt_FromLong(value);
   if (tmp != NULL) {
     PyDict_SetItemString(dictionary, name, tmp);
   }
@@ -728,18 +754,18 @@ MOD_INIT(_ppcradaroptions)
     return MOD_INIT_ERROR;
   }
 
-  add_string_constant(dictionary, "P_TH_CORR", "P_TH_CORR");
-  add_string_constant(dictionary, "P_ATT_TH_CORR", "P_ATT_TH_CORR");
-  add_string_constant(dictionary, "P_DBZH_CORR", "P_DBZH_CORR");
-  add_string_constant(dictionary, "P_ATT_DBZH_CORR", "P_ATT_DBZH_CORR");
-  add_string_constant(dictionary, "P_KDP_CORR", "P_KDP_CORR");
-  add_string_constant(dictionary, "P_RHOHV_CORR", "P_RHOHV_CORR");
-  add_string_constant(dictionary, "P_PHIDP_CORR", "P_PHIDP_CORR");
-  add_string_constant(dictionary, "P_ZDR_CORR", "P_ZDR_CORR");
-  add_string_constant(dictionary, "P_ZPHI_CORR", "P_ZPHI_CORR");
-  add_string_constant(dictionary, "Q_RESIDUAL_CLUTTER_MASK", "Q_RESIDUAL_CLUTTER_MASK");
-  add_string_constant(dictionary, "Q_ATTENUATION_MASK", "Q_ATTENUATION_MASK");
-  add_string_constant(dictionary, "Q_ATTENUATION", "Q_ATTENUATION");
+  add_long_constant(dictionary, "P_TH_CORR", PpcRadarOptions_TH_CORR);
+  add_long_constant(dictionary, "P_ATT_TH_CORR", PpcRadarOptions_ATT_TH_CORR);
+  add_long_constant(dictionary, "P_DBZH_CORR", PpcRadarOptions_DBZH_CORR);
+  add_long_constant(dictionary, "P_ATT_DBZH_CORR", PpcRadarOptions_ATT_DBZH_CORR);
+  add_long_constant(dictionary, "P_KDP_CORR", PpcRadarOptions_KDP_CORR);
+  add_long_constant(dictionary, "P_RHOHV_CORR", PpcRadarOptions_RHOHV_CORR);
+  add_long_constant(dictionary, "P_PHIDP_CORR", PpcRadarOptions_PHIDP_CORR);
+  add_long_constant(dictionary, "P_ZDR_CORR", PpcRadarOptions_ZDR_CORR);
+  add_long_constant(dictionary, "P_ZPHI_CORR", PpcRadarOptions_ZPHI_CORR);
+  add_long_constant(dictionary, "Q_RESIDUAL_CLUTTER_MASK", PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK);
+  add_long_constant(dictionary, "Q_ATTENUATION_MASK", PpcRadarOptions_QUALITY_ATTENUATION_MASK);
+  add_long_constant(dictionary, "Q_ATTENUATION", PpcRadarOptions_QUALITY_ATTENUATION);
 
   PYRAVE_DEBUG_INITIALIZE;
   return MOD_INIT_SUCCESS(module);
