@@ -250,7 +250,33 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
     a.kdpStdThreshold = 1
     self.assertAlmostEqual(1.0, a.kdpStdThreshold, 3);
-
+ 
+  def testSetBand(self):
+    a = _ppcradaroptions.new()
+    a.setBand('s')
+    self.assertAlmostEqual(14.0, a.kdpUp, 3)
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+     
+    a.setBand('c')
+    self.assertAlmostEqual(20.0, a.kdpUp, 3)
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+         
+    a.setBand('x')
+    self.assertAlmostEqual(40.0, a.kdpUp, 3)
+    self.assertAlmostEqual(-2.0, a.kdpDown, 3)
+    self.assertAlmostEqual(5.0, a.kdpStdThreshold, 3)
+ 
+  def testSetBand_invalid(self):
+    a = _ppcradaroptions.new()
+    try:
+      a.setBand('y')
+      self.fail("Expected ValueError")
+    except ValueError:
+      pass
+       
+       
   def testBB(self):
     a = _ppcradaroptions.new()
     

@@ -33,63 +33,15 @@ along with baltrad-ppc.  If not, see <http://www.gnu.org/licenses/>.
 #include <polarvolume.h>
 #include <time.h>
 #include <sys/time.h>
+#include "ppc_radar_options.h"
 
 /**
  * Represents one transformator
  */
 struct _PdpProcessor_t {
   RAVE_OBJECT_HEAD /** Always on top */
-
-  double parUZ[5]; /**< parameters for TH */
-  double parVel[5]; /**< parameters for VRADH */
-  double parTextPHIDP[5]; /**< parameters for the PHIDP texture */
-  double parRHV[5]; /**< parameters for RHOHV */
-  double parTextUZ[5]; /**< parameters for the TH texture */
-  double parClutterMap[5]; /**< parameters for the clutter map */
-  double nodata; /**< nodata to used in most products */
-  double minDBZ; /**< min DBZ threshold in the clutter correction */
-  double qualityThreshold; /**< quality threshold in the clutter correction */
-  double preprocessZThreshold; /**< preprocessing Z threshold before starting actual processing */
-  double residualMinZClutterThreshold; /**< min z clutter threshold during residual clutter filtering */
-  double residualThresholdZ; /**< min Z threshold in the residual clutter filtering */
-  double residualThresholdTexture; /**< texture threshold in the residual clutter filtering */
-  double residualClutterNodata; /**< the nodata value to be used when creating the residual clutter image used for creating the mask */
-  double residualClutterMaskNodata; /** Nodata value for the residual clutter mask */
-  double residualClutterTextureFilteringMaxZ; /**< Max Z value when creating the residual clutter mask, anything higher will be set to min value */
-  long residualFilterBinSize; /**< number of bins used in the window when creating the residual mask */
-  long residualFilterRaySize; /**< number of rays used in the window when creating the residual mask */
-
-  double minZMedfilterThreshold; /**< min z threshold used in the median filter that is used by the residual clutter filter */
-  double processingTextureThreshold; /**< threshold for the texture created in the pdp processing*/
-
-  long minWindow; /**< min window size */
-  double pdpRWin1; /**< pdp ray window 1 */
-  double pdpRWin2; /**< pdp ray window 1 */
-  long pdpNrIterations; /**< number of iterations in pdp processing */
-
-  double kdpUp; /**< Maximum allowed value of Kdp */
-  double kdpDown; /** Minimum allowed value of kdp */
-  double kdpStdThreshold; /**< Kdp STD threshold */
-  double BB; /**< BB value used in the zphi part of the pdp processing */
-  double thresholdPhidp; /**< threshold for PHIDP in the pdp processing */
-  double minAttenuationMaskRHOHV; /**< min RHOHV value for marking value as 1 in the attenuation mask */
-  double minAttenuationMaskKDP; /**< min KDP value for marking value as 1 in the attenuation mask */
-  double minAttenuationMaskTH;/**< min TH value for marking value as 1 in the attenuation mask */
-  double attenuationGammaH; /**< gamma h value used in the attenuation */
-  double attenuationAlpha;  /**< alpha value used in the attenuation */
-  double attenuationPIAminZ; /**< min PIA Z value in attenuation process */
-
-  int requestedFieldMask; /**< the fields that should be added to the result */
+  PpcRadarOptions_t* options; /**< the processing options */
 };
-
-//                                          Weight | X2   |  X3  | Delta1  | Delta2
-// X1=X2-Delta1, X3=X4-Delta2
-static double DEFAULT_PAR_UZ[5] =          {0.00,  30.00,  90.00,  62.00,  20.00 };
-static double DEFAULT_PAR_VEL[5] =         {0.30,  -0.90,   0.90,   0.15,   0.15 };
-static double DEFAULT_PAR_TEXT_PHIDP[5] =  {0.80,  15.00,  40.00,   5.00,  40.00 };
-static double DEFAULT_PAR_RHV[5] =         {0.20,   0.00,   0.60,   0.00,   0.10 };
-static double DEFAULT_PAR_TEXT_UZ[5] =     {0.30,  20.00,  60.00,   5.00,  10.00 };
-static double DEFAULT_PAR_CLUTTER_MAP[5] = {0.90,   5.00,  70.00,  20.00,  60.00 };
 
 /*@{ Private functions */
 /**
@@ -98,46 +50,10 @@ static double DEFAULT_PAR_CLUTTER_MAP[5] = {0.90,   5.00,  70.00,  20.00,  60.00
 static int PdpProcessor_constructor(RaveCoreObject* obj)
 {
 	PdpProcessor_t* pdp = (PdpProcessor_t*)obj;
-  memcpy(pdp->parUZ,  DEFAULT_PAR_UZ, sizeof(pdp->parUZ));
-  memcpy(pdp->parVel, DEFAULT_PAR_VEL, sizeof(pdp->parVel));
-  memcpy(pdp->parTextPHIDP, DEFAULT_PAR_TEXT_PHIDP, sizeof(pdp->parTextPHIDP));
-  memcpy(pdp->parRHV, DEFAULT_PAR_RHV, sizeof(pdp->parRHV));
-  memcpy(pdp->parTextUZ, DEFAULT_PAR_TEXT_UZ, sizeof(pdp->parTextUZ));
-  memcpy(pdp->parClutterMap, DEFAULT_PAR_CLUTTER_MAP, sizeof(pdp->parClutterMap));
-  pdp->minWindow = 11;
-  pdp->nodata = -999.0;
-  pdp->minDBZ = -32.0;
-  pdp->qualityThreshold = 0.75;
-  pdp->preprocessZThreshold = -20.0;
-  pdp->residualMinZClutterThreshold = -31.5;
-  pdp->residualClutterNodata = -999.0;
-  pdp->residualClutterMaskNodata = -1.0;
-  pdp->residualThresholdZ = -20.0;
-  pdp->residualThresholdTexture = 20.0;
-  pdp->residualFilterBinSize = 1;
-  pdp->residualFilterRaySize = 1;
-
-  pdp->minZMedfilterThreshold = -30.0;
-  pdp->processingTextureThreshold = 10.0;
-  pdp->residualClutterTextureFilteringMaxZ = 70.0;
-  pdp->pdpRWin1 = 3.5;
-  pdp->pdpRWin2 = 1.5;
-  pdp->pdpNrIterations = 2;
-
-  pdp->kdpUp = 20.0; /**< c band */
-  pdp->kdpDown = -2.0; /**< c band */
-  pdp->kdpStdThreshold = 5.0; /**< c band */
-  pdp->BB = 0.7987; /* C-band */
-  pdp->thresholdPhidp = 40.0;
-
-  pdp->minAttenuationMaskRHOHV = 0.8;
-  pdp->minAttenuationMaskKDP = 0.001;
-  pdp->minAttenuationMaskTH = -20.0;
-  pdp->attenuationGammaH = 0.08;
-  pdp->attenuationAlpha = 0.2;
-  pdp->attenuationPIAminZ = -30;
-
-  pdp->requestedFieldMask = PdpProcessor_DBZH_CORR | PdpProcessor_ATT_DBZH_CORR | PdpProcessor_PHIDP_CORR | PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK;
+	pdp->options = RAVE_OBJECT_NEW(&PpcRadarOptions_TYPE);
+	if (pdp->options == NULL) {
+	  return 0;
+	}
 
   return 1;
 }
@@ -147,6 +63,7 @@ static int PdpProcessor_constructor(RaveCoreObject* obj)
  */
 static void PdpProcessor_destructor(RaveCoreObject* obj)
 {
+  RAVE_OBJECT_RELEASE(((PdpProcessor_t*)obj)->options);
 }
 
 /**
@@ -156,48 +73,10 @@ static int PdpProcessor_copyconstructor(RaveCoreObject* obj, RaveCoreObject* src
 {
   PdpProcessor_t* this = (PdpProcessor_t*)obj;
   PdpProcessor_t* src = (PdpProcessor_t*)srcobj;
-
-  memcpy(this->parUZ,  src->parUZ, sizeof(src->parUZ));
-  memcpy(this->parVel, src->parVel, sizeof(src->parVel));
-  memcpy(this->parTextPHIDP, src->parTextPHIDP, sizeof(src->parTextPHIDP));
-  memcpy(this->parRHV, src->parRHV, sizeof(src->parRHV));
-  memcpy(this->parTextUZ, src->parTextUZ, sizeof(src->parTextUZ));
-  memcpy(this->parClutterMap, src->parClutterMap, sizeof(src->parClutterMap));
-  this->minWindow = src->minWindow;
-  this->nodata = src->nodata;
-  this->minDBZ = src->minDBZ;
-  this->qualityThreshold = src->qualityThreshold;
-  this->preprocessZThreshold = src->preprocessZThreshold;
-  this->residualMinZClutterThreshold = src->residualMinZClutterThreshold;
-  this->residualClutterNodata = src->residualClutterNodata;
-  this->residualClutterMaskNodata = src->residualClutterMaskNodata;
-  this->residualThresholdZ = src->residualThresholdZ;
-  this->residualThresholdTexture = src->residualThresholdTexture;
-  this->residualFilterBinSize = src->residualFilterBinSize;
-  this->residualFilterRaySize = src->residualFilterRaySize;
-
-  this->minZMedfilterThreshold = src->minZMedfilterThreshold;
-  this->processingTextureThreshold = src->processingTextureThreshold;
-  this->residualClutterTextureFilteringMaxZ = src->residualClutterTextureFilteringMaxZ;
-  this->pdpRWin1 = src->pdpRWin1;
-  this->pdpRWin2 = src->pdpRWin2;
-  this->pdpNrIterations = src->pdpNrIterations;
-
-  this->kdpUp = src->kdpUp;
-  this->kdpDown = src->kdpDown;
-  this->kdpStdThreshold = src->kdpStdThreshold;
-  this->BB = src->BB;
-  this->thresholdPhidp = src->thresholdPhidp;
-
-  this->minAttenuationMaskRHOHV = src->minAttenuationMaskRHOHV;
-  this->minAttenuationMaskKDP = src->minAttenuationMaskKDP;
-  this->minAttenuationMaskTH = src->minAttenuationMaskTH;
-  this->attenuationGammaH = src->attenuationGammaH;
-  this->attenuationAlpha = src->attenuationAlpha;
-  this->attenuationPIAminZ = src->attenuationPIAminZ;
-
-  this->requestedFieldMask = src->requestedFieldMask;
-
+  this->options = RAVE_OBJECT_CLONE(src->options);
+  if (this->options == NULL) {
+    return 0;
+  }
   return 1;
 }
 
@@ -414,17 +293,35 @@ static long long PdpProcessorInternal_timestamp(void) {
 /*@} End of Private functions */
 
 /*@{ Interface functions */
-void PdpProcessor_setRequestedFields(PdpProcessor_t* self, int fieldmask)
+//void PdpProcessor_setRequestedFields(PdpProcessor_t* self, int fieldmask)
+//{
+//  RAVE_ASSERT((self != NULL), "self == NULL");
+//  PpcRadarOptions_setRequestedFields(self->options, fieldmask);
+//  //self->requestedFieldMask = fieldmask;
+//}
+//
+//int PdpProcessor_getRequestedFields(PdpProcessor_t* self)
+//{
+//  RAVE_ASSERT((self != NULL), "self == NULL");
+//  return PpcRadarOptions_getRequestedFields(self->options);
+//}
+
+int PdpProcessor_setRadarOptions(PdpProcessor_t* self, PpcRadarOptions_t* options)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
-  self->requestedFieldMask = fieldmask;
+  if (options == NULL) {
+    return 0;
+  }
+  RAVE_OBJECT_RELEASE(self->options);
+  self->options = RAVE_OBJECT_COPY(options);
+  return 1;
 }
 
-int PdpProcessor_getRequestedFields(PdpProcessor_t* self)
+PpcRadarOptions_t* PdpProcessor_getRadarOptions(PdpProcessor_t* self)
 {
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->requestedFieldMask;
+  return RAVE_OBJECT_COPY(self->options);
 }
+
 
 PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
 {
@@ -448,6 +345,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   PolarScanParam_t *paramKDP = NULL, *paramRHOHV = NULL, *correctedPDP = NULL;
   PolarNavigator_t* navigator = NULL;
   PolarScanParam_t *TH = NULL, *ZDR = NULL, *DV = NULL, *PHIDP = NULL, *RHOHV = NULL, *DBZH = NULL;
+  double nodata, qualityThreshold, residualClutterMaskNodata, minAttenuationMaskRHOHV, minAttenuationMaskKDP, minAttenuationMaskTH;
 
   long starttime = PdpProcessorInternal_timestamp();
 
@@ -458,6 +356,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
+  nodata = PpcRadarOptions_getNodata(self->options);
   navigator = PolarScan_getNavigator(scan);
 
   elangle = PolarScan_getElangle(scan);
@@ -478,11 +377,11 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
-  dataTH = PdpProcessorInternal_getData2DFromParam(TH, self->nodata);
-  dataZDR = PdpProcessorInternal_getData2DFromParam(ZDR, self->nodata);
-  dataDV = PdpProcessorInternal_getData2DFromParam(DV, self->nodata);
-  dataPHIDP = PdpProcessorInternal_getData2DFromParam(PHIDP, self->nodata);
-  dataRHOHV = PdpProcessorInternal_getData2DFromParam(RHOHV, self->nodata);
+  dataTH = PdpProcessorInternal_getData2DFromParam(TH, nodata);
+  dataZDR = PdpProcessorInternal_getData2DFromParam(ZDR, nodata);
+  dataDV = PdpProcessorInternal_getData2DFromParam(DV, nodata);
+  dataPHIDP = PdpProcessorInternal_getData2DFromParam(PHIDP, nodata);
+  dataRHOHV = PdpProcessorInternal_getData2DFromParam(RHOHV, nodata);
   dataDBZH = PdpProcessorInternal_getData2DFromParam(DBZH, PolarScanParam_getNodata(DBZH));
   if (dataTH == NULL || dataZDR == NULL || dataDV == NULL || dataPHIDP == NULL || dataRHOHV == NULL || dataDBZH == NULL) {
     RAVE_ERROR0("Can not generate PPC product since one or more of data fields for TH, ZDR, DV, PHIDP, RHOHV and DBZH not could be retrieved");
@@ -502,18 +401,18 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     RAVE_ERROR0("Failed to multiplate PHIDP");
     goto done;
   }
-  nodataPHIDP = self->nodata;
-  nodataTH = self->nodata;
+  nodataPHIDP = nodata;
+  nodataTH = nodata;
   nodataDBZH = PolarScanParam_getNodata(DBZH);
-  nodataZDR = self->nodata;
-  nodataRHOHV = self->nodata;
+  nodataZDR = nodata;
+  nodataRHOHV = nodata;
   undetectTH = PolarScanParam_getUndetect(TH)*PolarScanParam_getGain(TH) + PolarScanParam_getOffset(TH);
 
   for (bi = 0; bi < nbins; bi++) {
     for (ri = 0; ri < nrays; ri++) {
       double v;
       RaveData2D_getValueUnchecked(dataTH, bi, ri, &v);
-      if (v < self->preprocessZThreshold) {
+      if (v < PpcRadarOptions_getPreprocessZThreshold(self->options)) {
         RaveData2D_setValueUnchecked(dataTH, bi, ri, nodataTH);
         RaveData2D_setValueUnchecked(dataZDR, bi, ri, nodataZDR);
         RaveData2D_setValueUnchecked(dataPDP, bi, ri, nodataPHIDP);
@@ -536,8 +435,10 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   /**************************************************************
    * Clutter removal by using a Fuzzy Logic Approach
    **************************************************************/
+  qualityThreshold = PpcRadarOptions_getQualityThreshold(self->options);
+
   if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, dataPDP,
-        PolarScanParam_getNodata(TH), PolarScanParam_getNodata(DV), self->qualityThreshold,
+        PolarScanParam_getNodata(TH), PolarScanParam_getNodata(DV), qualityThreshold,
         &outZ, &outQuality, &outClutterMask)) {
     goto done;
   }
@@ -551,7 +452,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
       double v = 0.0;
       RaveData2D_getValueUnchecked(outQuality, bi, ri, &v);
 
-      if (v < self->qualityThreshold) {
+      if (v < qualityThreshold) {
         RaveData2D_setValueUnchecked(dataTH, bi, ri, undetectTH);
         RaveData2D_setValueUnchecked(dataZDR, bi, ri, nodataZDR);
         RaveData2D_setValueUnchecked(dataPHIDP, bi, ri, nodataPHIDP);
@@ -565,7 +466,11 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   /**************************************************************
    * MEDIAN FILTERING TO REMOVE RESIDUAL ISOLATED PIXELS AFFECTED BY CLUTTER
    **************************************************************/
-  residualClutterMask = PdpProcessor_residualClutterFilter(self, dataTH, self->residualThresholdZ, self->residualThresholdTexture, self->residualFilterBinSize, self->residualFilterRaySize);
+  residualClutterMask = PdpProcessor_residualClutterFilter(self, dataTH,
+      PpcRadarOptions_getResidualThresholdZ(self->options),
+      PpcRadarOptions_getResidualThresholdTexture(self->options),
+      PpcRadarOptions_getResidualFilterBinSize(self->options),
+      PpcRadarOptions_getResidualFilterRaySize(self->options));
   if (residualClutterMask == NULL) {
     goto done;
   }
@@ -575,15 +480,19 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
    * PHIDP Filtering and Kdp retrieval
    **************************************************************/
 
-  if (!PdpProcessor_pdpScript(self, dataPDP, rangeKm, self->pdpRWin1, self->pdpRWin2, self->pdpNrIterations, &outPDP, &outKDP)) {
+  if (!PdpProcessor_pdpScript(self, dataPDP, rangeKm,
+      PpcRadarOptions_getPdpRWin1(self->options),
+      PpcRadarOptions_getPdpRWin2(self->options),
+      PpcRadarOptions_getPdpNrIterations(self->options), &outPDP, &outKDP)) {
     goto done;
   }
+  residualClutterMaskNodata = PpcRadarOptions_getResidualClutterMaskNodata(self->options);
 
   for (bi = 0; bi < nbins; bi++) {
     for (ri = 0; ri < nrays; ri++) {
       double v = 0.0;
       RaveData2D_getValueUnchecked(residualClutterMask, bi, ri, &v);
-      if (v == 0.0 || v == self->residualClutterMaskNodata) {
+      if (v == 0.0 || v == residualClutterMaskNodata) {
         RaveData2D_setValueUnchecked(dataTH, bi, ri, undetectTH);
         RaveData2D_setValueUnchecked(dataZDR, bi, ri, flag);
         RaveData2D_setValueUnchecked(dataRHOHV, bi, ri, flag);
@@ -592,7 +501,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
 
       RaveData2D_getValueUnchecked(outQuality, bi, ri, &v);
       RaveData2D_getValueUnchecked(dataTH, bi, ri, &v);
-      if (v < self->qualityThreshold || v < -900) {
+      if (v < qualityThreshold || v < -900) {
         RaveData2D_setValueUnchecked(outPDP, bi, ri, nodataPHIDP);
       }
     }
@@ -602,6 +511,14 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
    * Attenuation correction using a linear approach (Bringi et al., 1990)
    **************************************************************/
   attenuationMask = RaveData2D_zeros(bi, ri, RaveDataType_DOUBLE);
+  if (attenuationMask == NULL) {
+    RAVE_ERROR0("Failed to create attenuation mask");
+    goto done;
+  }
+  minAttenuationMaskRHOHV = PpcRadarOptions_getMinAttenuationMaskRHOHV(self->options);
+  minAttenuationMaskKDP = PpcRadarOptions_getMinAttenuationMaskKDP(self->options);
+  minAttenuationMaskTH = PpcRadarOptions_getMinAttenuationMaskTH(self->options);
+
 
   for (bi = 0; bi < nbins; bi++) {
     double d = 0.0, h = 0.0;
@@ -613,14 +530,15 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
         RaveData2D_getValueUnchecked(dataRHOHV, bi, ri, &vRHOHV);
         RaveData2D_getValueUnchecked(outKDP, bi, ri, &vKDP);
         RaveData2D_getValueUnchecked(dataTH, bi, ri, &vTH);
-        if (vRHOHV > self->minAttenuationMaskRHOHV && vKDP > self->minAttenuationMaskKDP && vTH > self->minAttenuationMaskTH) {
+        if (vRHOHV > minAttenuationMaskRHOHV && vKDP > minAttenuationMaskKDP && vTH > minAttenuationMaskTH) {
           RaveData2D_setValueUnchecked(attenuationMask, bi, ri, 1.0);
         }
       }
     }
   }
-  if (!PdpProcessor_attenuation(self, dataTH, dataZDR, dataDBZH, outPDP, attenuationMask, self->attenuationGammaH,
-        self->attenuationAlpha, &outAttenuationZ, &outAttenuationZDR, &outAttenuationPIA, &outAttenuationDBZH)) {
+  if (!PdpProcessor_attenuation(self, dataTH, dataZDR, dataDBZH, outPDP, attenuationMask,
+      PpcRadarOptions_getAttenuationGammaH(self->options),
+      PpcRadarOptions_getAttenuationAlpha(self->options), &outAttenuationZ, &outAttenuationZDR, &outAttenuationPIA, &outAttenuationDBZH)) {
     goto done;
   }
   // fprintf(stderr, "attenuation ran after %ld ms\n", PdpProcessorInternal_timestamp() - starttime);
@@ -630,7 +548,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
    * attenuation correction
    **************************************************************/
   if (!PdpProcessor_zphi(self, dataTH, outPDP, attenuationMask, rangeKm,
-      self->BB, self->attenuationGammaH, &outZPHI, &outAH)) {
+      PpcRadarOptions_getBB(self->options), PpcRadarOptions_getAttenuationGammaH(self->options), &outZPHI, &outAH)) {
     goto done;
   }
   // fprintf(stderr, "zphi ran after %ld ms\n", PdpProcessorInternal_timestamp() - starttime);
@@ -645,7 +563,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
-  if (PdpProcessor_TH_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_TH_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     correctedZ = PdpProcessorInternal_createPolarScanParamFromData2D(dataTH, "TH_CORR", 1, 255.0, 0.0);
     if (correctedZ == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZ)) {
@@ -654,7 +572,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_ATT_TH_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_ATT_TH_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     attenuatedZ = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZ, "ATT_TH_CORR", 1, 255.0, 0.0);
     if (attenuatedZ == NULL ||
         !PolarScan_addParameter(tmpresult, attenuatedZ)) {
@@ -663,7 +581,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_DBZH_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_DBZH_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     correctedDBZH = PdpProcessorInternal_createPolarScanParamFromData2D(dataDBZH, "DBZH_CORR", 1, 255.0, 0.0);
     if (correctedDBZH == NULL ||
         !PolarScan_addParameter(tmpresult, correctedDBZH)) {
@@ -672,7 +590,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_ATT_DBZH_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_ATT_DBZH_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     attenuatedDBZH = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationDBZH, "ATT_DBZH_CORR", 1, 255.0, 0.0);
     if (attenuatedDBZH == NULL ||
         !PolarScan_addParameter(tmpresult, attenuatedDBZH)) {
@@ -682,7 +600,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
 
 
-  if (PdpProcessor_KDP_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_KDP_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     paramKDP = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "KDP_CORR", 1, 255.0, 0.0);
     if (paramKDP == NULL ||
         !PolarScan_addParameter(tmpresult, paramKDP)) {
@@ -691,7 +609,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_RHOHV_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_RHOHV_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     paramRHOHV = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "RHOHV_CORR", 1, 255.0, 0.0);
     if (paramRHOHV == NULL ||
         !PolarScan_addParameter(tmpresult, paramRHOHV)) {
@@ -700,7 +618,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_PHIDP_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_PHIDP_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     correctedPDP = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "PHIDP_CORR", 1, 255.0, 0.0);
     if (correctedPDP == NULL ||
         !PolarScan_addParameter(tmpresult, correctedPDP)) {
@@ -709,7 +627,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_ZDR_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_ZDR_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "ZDR_CORR", 1, 255.0, 0.0);
     if (correctedZDR == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZDR)) {
@@ -718,7 +636,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_ZPHI_CORR & self->requestedFieldMask) {
+  if (PpcRadarOptions_ZPHI_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
     correctedZPHI = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "ZPHI_CORR", 1, 255.0, 0.0);
     if (correctedZPHI == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZPHI)) {
@@ -727,13 +645,13 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     }
   }
 
-  if (PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK & self->requestedFieldMask) {
+  if (PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK & PpcRadarOptions_getRequestedFields(self->options)) {
     if (!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(tmpresult, residualClutterMask, "se.baltrad.ppc.residual_clutter_mask")) {
       goto done;
     }
   }
 
-  if (PdpProcessor_QUALITY_ATTENUATION_MASK & self->requestedFieldMask) {
+  if (PpcRadarOptions_QUALITY_ATTENUATION_MASK & PpcRadarOptions_getRequestedFields(self->options)) {
     if (!PdpProcessorInternal_addRaveQualityFieldToScanFromData2D(tmpresult, attenuationMask, "se.baltrad.ppc.attenuation_mask")) {
       goto done;
     }
@@ -788,496 +706,11 @@ done:
   return result;
 }
 
-void PdpProcessor_setKdpUp(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->kdpUp = v;
-}
-
-double PdpProcessor_getKdpUp(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->kdpUp;
-}
-
-void PdpProcessor_setKdpDown(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->kdpDown = v;
-}
-
-double PdpProcessor_getKdpDown(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->kdpDown;
-}
-
-void PdpProcessor_setKdpStdThreshold(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->kdpStdThreshold = v;
-}
-
-double PdpProcessor_getKdpStdThreshold(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->kdpStdThreshold;
-}
-
-void PdpProcessor_setBB(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->BB = v;
-}
-
-double PdpProcessor_getBB(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->BB;
-}
-
-void PdpProcessor_setThresholdPhidp(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->thresholdPhidp = v;
-}
-
-double PdpProcessor_getThresholdPhidp(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->thresholdPhidp;
-}
-
-void PdpProcessor_setMinWindow(PdpProcessor_t* self, long window)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  if (window <= 0) {
-    RAVE_ERROR0("Window size must be > 0");
-    return;
-  }
-  self->minWindow = window;
-}
-
-long PdpProcessor_getMinWindow(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->minWindow;
-}
-
-
-int PdpProcessor_setBand(PdpProcessor_t* self, char band)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-
-  if (band == 's') {
-    self->kdpUp = 14;
-    self->kdpDown = -2;
-    self->kdpStdThreshold = 5;
-  } else if (band == 'c') {
-    self->kdpUp = 20;
-    self->kdpDown = -2;
-    self->kdpStdThreshold = 5;
-  } else if (band == 'x') {
-    self->kdpUp = 40;
-    self->kdpDown = -2;
-    self->kdpStdThreshold = 5;
-  } else {
-    return 0; // No such band
-  }
-  return 1;
-}
-
-void PdpProcessor_setPdpRWin1(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->pdpRWin1 = v;
-}
-
-double PdpProcessor_getPdpRWin1(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->pdpRWin1;
-}
-
-void PdpProcessor_setPdpRWin2(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->pdpRWin2 = v;
-}
-
-double PdpProcessor_getPdpRWin2(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->pdpRWin2;
-}
-
-void PdpProcessor_setPdpNrIterations(PdpProcessor_t* self, long v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->pdpNrIterations = v;
-}
-
-long PdpProcessor_getPdpNrIterations(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->pdpNrIterations;
-}
-
-/**
- * Helper to simplify work with the parameter constants
- */
-static void PdpProcessorInternal_getParameters(double* pars, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  *weight = pars[0];
-  *X2 = pars[1];
-  *X3 = pars[2];
-  *delta1 = pars[3];
-  *delta2 = pars[4];
-}
-
-/**
- * Helper to simplify work with the parameter constants
- */
-static void PdpProcessorInternal_setParameters(double* pars, double weight, double X2, double X3, double delta1, double delta2)
-{
-  pars[0] = weight;
-  pars[1] = X2;
-  pars[2] = X3;
-  pars[3] = delta1;
-  pars[4] = delta2;
-}
-
-void PdpProcessor_getParametersUZ(PdpProcessor_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_getParameters(self->parUZ, weight, X2, X3, delta1, delta2);
-}
-
-void PdpProcessor_setParametersUZ(PdpProcessor_t* self, double weight, double X2, double X3, double delta1, double delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_setParameters(self->parUZ, weight, X2, X3, delta1, delta2);
-}
-
-void PdpProcessor_getParametersVEL(PdpProcessor_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_getParameters(self->parVel, weight, X2, X3, delta1, delta2);
-}
-
-void PdpProcessor_setParametersVEL(PdpProcessor_t* self, double weight, double X2, double X3, double delta1, double delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_setParameters(self->parVel, weight, X2, X3, delta1, delta2);
-}
-
-void PdpProcessor_getParametersTEXT_PHIDP(PdpProcessor_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_getParameters(self->parTextPHIDP, weight, X2, X3, delta1, delta2);
-}
-
-void PdpProcessor_setParametersTEXT_PHIDP(PdpProcessor_t* self, double weight, double X2, double X3, double delta1, double delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_setParameters(self->parTextPHIDP, weight, X2, X3, delta1, delta2);
-}
-
-void PdpProcessor_getParametersRHV(PdpProcessor_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_getParameters(self->parRHV, weight, X2, X3, delta1, delta2);
-
-}
-
-void PdpProcessor_setParametersRHV(PdpProcessor_t* self, double weight, double X2, double X3, double delta1, double delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_setParameters(self->parRHV, weight, X2, X3, delta1, delta2);
-
-}
-
-void PdpProcessor_getParametersTEXT_UZ(PdpProcessor_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_getParameters(self->parTextUZ, weight, X2, X3, delta1, delta2);
-
-}
-
-void PdpProcessor_setParametersTEXT_UZ(PdpProcessor_t* self, double weight, double X2, double X3, double delta1, double delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_setParameters(self->parTextUZ, weight, X2, X3, delta1, delta2);
-
-}
-
-void PdpProcessor_getParametersCLUTTER_MAP(PdpProcessor_t* self, double* weight, double* X2, double* X3, double* delta1, double* delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_getParameters(self->parClutterMap, weight, X2, X3, delta1, delta2);
-
-}
-
-void PdpProcessor_setParametersCLUTTER_MAP(PdpProcessor_t* self, double weight, double X2, double X3, double delta1, double delta2)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  PdpProcessorInternal_setParameters(self->parClutterMap, weight, X2, X3, delta1, delta2);
-
-}
-
-
 double PdpProcessor_getMeltingLayerBottomHeight(PolarScan_t* scan)
 {
   /* @TODO: implement proper support for this */
   return 2.463;
 }
-
-void PdpProcessor_setNodata(PdpProcessor_t* self, double nodata)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->nodata = nodata;
-}
-
-double PdpProcessor_getNodata(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->nodata;
-}
-
-void PdpProcessor_setMinDBZ(PdpProcessor_t* self, double minv)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->minDBZ = minv;
-}
-
-double PdpProcessor_getMinDBZ(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->minDBZ;
-}
-
-void PdpProcessor_setQualityThreshold(PdpProcessor_t* self, double minv)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->qualityThreshold = minv;
-}
-
-double PdpProcessor_getQualityThreshold(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->qualityThreshold;
-}
-
-void PdpProcessor_setPreprocessZThreshold(PdpProcessor_t* self, double minv)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->preprocessZThreshold = minv;
-}
-
-double PdpProcessor_getPreprocessZThreshold(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->preprocessZThreshold;
-}
-
-void PdpProcessor_setResidualMinZClutterThreshold(PdpProcessor_t* self, double minv)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualMinZClutterThreshold = minv;
-}
-
-double PdpProcessor_getResidualMinZClutterThreshold(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualMinZClutterThreshold;
-}
-
-void PdpProcessor_setResidualThresholdZ(PdpProcessor_t* self, double minv)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualThresholdZ = minv;
-}
-
-double PdpProcessor_getResidualThresholdZ(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualThresholdZ;
-}
-
-void PdpProcessor_setResidualThresholdTexture(PdpProcessor_t* self, double minv)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualThresholdTexture = minv;
-}
-
-double PdpProcessor_getResidualThresholdTexture(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualThresholdTexture;
-}
-
-void PdpProcessor_setResidualClutterNodata(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualClutterNodata = v;
-}
-
-double PdpProcessor_getResidualClutterNodata(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualClutterNodata;
-}
-
-void PdpProcessor_setResidualClutterMaskNodata(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualClutterMaskNodata = v;
-}
-
-double PdpProcessor_getResidualClutterMaskNodata(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualClutterMaskNodata;
-}
-
-void PdpProcessor_setResidualClutterTextureFilteringMaxZ(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualClutterTextureFilteringMaxZ = v;
-}
-
-double PdpProcessor_getResidualClutterTextureFilteringMaxZ(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualClutterTextureFilteringMaxZ;
-}
-
-void PdpProcessor_setResidualFilterBinSize(PdpProcessor_t* self, long v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualFilterBinSize = v;
-}
-
-long PdpProcessor_getResidualFilterBinSize(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualFilterBinSize;
-}
-
-void PdpProcessor_setResidualFilterRaySize(PdpProcessor_t* self, long v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->residualFilterRaySize = v;
-}
-
-long PdpProcessor_getResidualFilterRaySize(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->residualFilterRaySize;
-}
-
-void PdpProcessor_setMinZMedfilterThreshold(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->minZMedfilterThreshold = v;
-}
-
-double PdpProcessor_getMinZMedfilterThreshold(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->minZMedfilterThreshold;
-}
-
-void PdpProcessor_setProcessingTextureThreshold(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->processingTextureThreshold = v;
-}
-
-double PdpProcessor_getProcessingTextureThreshold(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->processingTextureThreshold;
-}
-
-void PdpProcessor_setMinAttenuationMaskRHOHV(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->minAttenuationMaskRHOHV = v;
-}
-
-double PdpProcessor_getMinAttenuationMaskRHOHV(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->minAttenuationMaskRHOHV;
-}
-
-void PdpProcessor_setMinAttenuationMaskKDP(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->minAttenuationMaskKDP = v;
-}
-
-double PdpProcessor_getMinAttenuationMaskKDP(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->minAttenuationMaskKDP;
-}
-
-void PdpProcessor_setMinAttenuationMaskTH(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->minAttenuationMaskTH = v;
-}
-
-double PdpProcessor_getMinAttenuationMaskTH(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->minAttenuationMaskTH;
-}
-
-void PdpProcessor_setAttenuationGammaH(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->attenuationGammaH = v;
-}
-
-double PdpProcessor_getAttenuationGammaH(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->attenuationGammaH;
-}
-
-void PdpProcessor_setAttenuationAlpha(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->attenuationAlpha = v;
-}
-
-double PdpProcessor_getAttenuationAlpha(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->attenuationAlpha;
-}
-
-void PdpProcessor_setAttenuationPIAminZ(PdpProcessor_t* self, double v)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  self->attenuationPIAminZ = v;
-}
-
-double PdpProcessor_getAttenuationPIAminZ(PdpProcessor_t* self)
-{
-  RAVE_ASSERT((self != NULL), "self == NULL");
-  return self->attenuationPIAminZ;
-}
-
-//
-//static double internal_get(RaveData2D_t* f, long x, long y) {
-//  double v;
-//  RaveData2D_getValueUnchecked(f,  x,  y,  &v);
-//  return v;
-//}
 
 RaveData2D_t* PdpProcessor_texture(PdpProcessor_t* self, RaveData2D_t* X)
 {
@@ -1425,7 +858,17 @@ RaveData2D_t* PdpProcessor_clutterID(PdpProcessor_t* self, RaveData2D_t* Z, Rave
 {
   long xsize = 0, ysize = 0;
   long x, y;
-  double sumWeight = self->parUZ[0] + self->parVel[0] + self->parTextPHIDP[0] + self->parRHV[0] + self->parTextUZ[0] + self->parClutterMap[0];
+
+  double uzWeight, uzX2, uzX3, uzDelta1, uzDelta2;
+  double velWeight, velX2, velX3, velDelta1, velDelta2;
+  double textPhidpWeight, textPhidpX2, textPhidpX3, textPhidpDelta1, textPhidpDelta2;
+  double rhvWeight, rhvX2, rhvX3, rhvDelta1, rhvDelta2;
+  double textUzWeight, textUzX2, textUzX3, textUzDelta1, textUzDelta2;
+  double clutterMapWeight, clutterMapX2, clutterMapX3, clutterMapDelta1, clutterMapDelta2;
+
+
+  //double sumWeight = self->parUZ[0] + self->parVel[0] + self->parTextPHIDP[0] + self->parRHV[0] + self->parTextUZ[0] + self->parClutterMap[0];
+  double sumWeight;
 
   RaveData2D_t* degree = NULL;
   RaveData2D_t* result = NULL;
@@ -1433,6 +876,15 @@ RaveData2D_t* PdpProcessor_clutterID(PdpProcessor_t* self, RaveData2D_t* Z, Rave
   RaveData2D_t *mbf_RHOHV = NULL, *mbf_textureZ = NULL, *mbf_clutterMap = NULL;
 
   RAVE_ASSERT((self != NULL), "self == NULL");
+
+  PpcRadarOptions_getParametersUZ(self->options, &uzWeight, &uzX2, &uzX3, &uzDelta1, &uzDelta2);
+  PpcRadarOptions_getParametersVEL(self->options, &velWeight, &velX2, &velX3, &velDelta1, &velDelta2);
+  PpcRadarOptions_getParametersTEXT_PHIDP(self->options, &textPhidpWeight, &textPhidpX2, &textPhidpX3, &textPhidpDelta1, &textPhidpDelta2);
+  PpcRadarOptions_getParametersRHV(self->options, &rhvWeight, &rhvX2, &rhvX3, &rhvDelta1, &rhvDelta2);
+  PpcRadarOptions_getParametersTEXT_UZ(self->options, &textUzWeight, &textUzX2, &textUzX3, &textUzDelta1, &textUzDelta2);
+  PpcRadarOptions_getParametersCLUTTER_MAP(self->options, &clutterMapWeight, &clutterMapX2, &clutterMapX3, &clutterMapDelta1, &clutterMapDelta2);
+
+  sumWeight = uzWeight + velWeight + textPhidpWeight + rhvWeight + textUzWeight + clutterMapWeight;
 
   if (sumWeight == 0.0) {
     RAVE_ERROR0("Sum of parameter weights == 0.0");
@@ -1449,12 +901,12 @@ RaveData2D_t* PdpProcessor_clutterID(PdpProcessor_t* self, RaveData2D_t* Z, Rave
   if (degree == NULL) {
     return NULL;
   }
-  mbf_Z = PdpProcessor_trap(self, Z, self->parUZ[1], self->parUZ[2], self->parUZ[3], self->parUZ[4]);
-  mbf_VRADH = PdpProcessor_trap(self, VRADH, self->parVel[1], self->parVel[2], self->parVel[3], self->parVel[4]);
-  mbf_texturePHIDP = PdpProcessor_trap(self, texturePHIDP, self->parTextPHIDP[1], self->parTextPHIDP[2], self->parTextPHIDP[3], self->parTextPHIDP[4]);
-  mbf_RHOHV = PdpProcessor_trap(self, RHOHV, self->parRHV[1], self->parRHV[2], self->parRHV[3], self->parRHV[4]);
-  mbf_textureZ = PdpProcessor_trap(self, textureZ, self->parTextUZ[1], self->parTextUZ[2], self->parTextUZ[3], self->parTextUZ[4]);
-  mbf_clutterMap = PdpProcessor_trap(self, clutterMap, self->parClutterMap[1], self->parClutterMap[2], self->parClutterMap[3], self->parClutterMap[4]);
+  mbf_Z = PdpProcessor_trap(self, Z, uzX2, uzX3, uzDelta1, uzDelta2);
+  mbf_VRADH = PdpProcessor_trap(self, VRADH, velX2, velX3, velDelta1, velDelta2);
+  mbf_texturePHIDP = PdpProcessor_trap(self, texturePHIDP, textPhidpX2, textPhidpX3, textPhidpDelta1, textPhidpDelta2);
+  mbf_RHOHV = PdpProcessor_trap(self, RHOHV, rhvX2, rhvX3, rhvDelta1, rhvDelta2);
+  mbf_textureZ = PdpProcessor_trap(self, textureZ, textUzX2, textUzX3, textUzDelta1, textUzDelta2);
+  mbf_clutterMap = PdpProcessor_trap(self, clutterMap, clutterMapX2, clutterMapX3, clutterMapDelta1, clutterMapDelta2);
   if (mbf_Z == NULL || mbf_VRADH == NULL || mbf_texturePHIDP == NULL ||
       mbf_RHOHV == NULL || mbf_textureZ == NULL || mbf_clutterMap == NULL) {
     RAVE_ERROR0("Failed to create trap matrices");
@@ -1477,14 +929,14 @@ RaveData2D_t* PdpProcessor_clutterID(PdpProcessor_t* self, RaveData2D_t* Z, Rave
       RaveData2D_getValueUnchecked(mbf_clutterMap, x, y, &vClutterMap);
 
       if (inVRADH != nodataVRADH && inZ != nodataZ) {
-        vDegree = self->parUZ[0] * vZ + self->parVel[0] * vVRADH + self->parTextPHIDP[0] * vTexturePHIDP +
-            self->parRHV[0] * vRHOHV + self->parTextUZ[0] * vTextureZ + self->parClutterMap[0] * vClutterMap;
+        vDegree = uzWeight * vZ + velWeight * vVRADH + textPhidpWeight * vTexturePHIDP +
+            rhvWeight * vRHOHV + textUzWeight * vTextureZ + clutterMapWeight * vClutterMap;
         vDegree /= sumWeight;
         //fprintf(stderr, "x=%ld, y=%ld => vDegree1 = %f\n", x, y, vDegree);
       }
       if (inVRADH == nodataVRADH && inZ != nodataZ) {
-        vDegree = self->parUZ[0] * vZ + self->parVel[0] * vVRADH + self->parTextPHIDP[0] * vTexturePHIDP +
-            self->parRHV[0] * vRHOHV + self->parTextUZ[0] * vTextureZ + self->parClutterMap[0] * vClutterMap;
+        vDegree = uzWeight * vZ + velWeight * vVRADH + textPhidpWeight * vTexturePHIDP +
+            rhvWeight * vRHOHV + textUzWeight * vTextureZ + clutterMapWeight * vClutterMap;
         vDegree /= sumWeight;
         //fprintf(stderr, "x=%ld, y=%ld => vDegree2 = %f\n", x, y, vDegree);
       }
@@ -1515,6 +967,7 @@ int PdpProcessor_clutterCorrection(PdpProcessor_t* self, RaveData2D_t* Z, RaveDa
   RaveData2D_t* degree = NULL;
   RaveData2D_t* tmp = NULL;
   RaveData2D_t *Z2 = NULL, *quality = NULL, *clutterMask = NULL;
+  double minDBZ;
 
   RAVE_ASSERT((self != NULL), "self == NULL");
 
@@ -1542,13 +995,14 @@ int PdpProcessor_clutterCorrection(PdpProcessor_t* self, RaveData2D_t* Z, RaveDa
   if (quality == NULL) {
     goto done;
   }
+  minDBZ = PpcRadarOptions_getMinDBZ(self->options);
   //fprintf(stderr, "quality=%s\n", RaveData2D_str(quality));
   for (x = 0; x < xsize; x++) {
     for (y = 0; y < ysize; y++) {
       double vZ = 0.0, vQ = 0.0;
       RaveData2D_getValueUnchecked(Z, x, y, &vZ);
       RaveData2D_getValueUnchecked(quality, x, y, &vQ);
-      if (vZ >= self->minDBZ && vZ != nodataZ && vQ < qualityThreshold) {
+      if (vZ >= minDBZ && vZ != nodataZ && vQ < qualityThreshold) {
 //        if (vZ != -32.0)
 //          fprintf(stderr, "(%ld, %ld) = %f\n", x, y, vZ);
         RaveData2D_setValueUnchecked(Z2, x, y, nodataZ);
@@ -1581,6 +1035,7 @@ RaveData2D_t* PdpProcessor_medfilt(PdpProcessor_t* self, RaveData2D_t* Z, double
   RaveData2D_t* filtmask = NULL;
   RaveData2D_t *zout = NULL, *ztmp = NULL;
   int usingNodata = 0;
+  double minZMedfilterThreshold;
 
   int threshctr = 0;
 
@@ -1629,6 +1084,7 @@ RaveData2D_t* PdpProcessor_medfilt(PdpProcessor_t* self, RaveData2D_t* Z, double
   RAVE_OBJECT_RELEASE(zout);
   zout = RAVE_OBJECT_COPY(ztmp);
   RAVE_OBJECT_RELEASE(ztmp);
+  minZMedfilterThreshold = PpcRadarOptions_getMinZMedfilterThreshold(self->options);
 
   for (x = 0; x < xsize; x++) {
     for (y = 0; y < ysize; y++) {
@@ -1636,7 +1092,7 @@ RaveData2D_t* PdpProcessor_medfilt(PdpProcessor_t* self, RaveData2D_t* Z, double
       if (v == 0.0)
         RaveData2D_setValueUnchecked(zout, x, y, minVal);
       RaveData2D_getValueUnchecked(Z, x, y, &v);
-      if (v >= minVal && v < self->minZMedfilterThreshold) {
+      if (v >= minVal && v < minZMedfilterThreshold) {
         RaveData2D_setValueUnchecked(zout, x, y, minVal);
       }
     }
@@ -1662,6 +1118,7 @@ RaveData2D_t* PdpProcessor_residualClutterFilter(PdpProcessor_t* self, RaveData2
   RaveData2D_t* medZ = NULL;
   RaveData2D_t* textureZout = NULL;
   double nodata = 0.0;
+  double residualClutterNodata, residualMinZClutterThreshold, residualClutterTextureFilteringMaxZ, residualClutterMaskNodata;
   // long long starttime = PdpProcessorInternal_timestamp();
 
   long nhctr = 0;
@@ -1685,8 +1142,13 @@ RaveData2D_t* PdpProcessor_residualClutterFilter(PdpProcessor_t* self, RaveData2
   ysize = RaveData2D_getYsize(Z);
   minZ = RaveData2D_min(Z);
 
+  residualClutterNodata = PpcRadarOptions_getResidualClutterNodata(self->options);
+  residualMinZClutterThreshold = PpcRadarOptions_getResidualMinZClutterThreshold(self->options);
+  residualClutterTextureFilteringMaxZ = PpcRadarOptions_getResidualClutterTextureFilteringMaxZ(self->options);
+  residualClutterMaskNodata = PpcRadarOptions_getResidualClutterMaskNodata(self->options);
+
   img = RaveData2D_zeros(xsize, ysize, RaveDataType_DOUBLE);
-  RaveData2D_setNodata(img, self->residualClutterNodata);
+  RaveData2D_setNodata(img, residualClutterNodata);
   RaveData2D_useNodata(img, 1);
 
   mask = RaveData2D_zeros(xsize, ysize, RaveDataType_DOUBLE);
@@ -1698,8 +1160,8 @@ RaveData2D_t* PdpProcessor_residualClutterFilter(PdpProcessor_t* self, RaveData2
     for (y = 0; y < ysize; y++) {
       double v = 0.0;
       RaveData2D_getValueUnchecked(Z, x, y, &v);
-      if (v < self->residualMinZClutterThreshold || v == nodata) {
-        RaveData2D_setValueUnchecked(img, x, y, self->residualClutterNodata); /* TODO: Specify as residualClutterNodata? */
+      if (v < residualMinZClutterThreshold || v == nodata) {
+        RaveData2D_setValueUnchecked(img, x, y, residualClutterNodata); /* TODO: Specify as residualClutterNodata? */
       } else {
         RaveData2D_setValueUnchecked(img, x, y, v);
         if (v > thresholdZ) {
@@ -1744,7 +1206,7 @@ RaveData2D_t* PdpProcessor_residualClutterFilter(PdpProcessor_t* self, RaveData2
     }
     // fprintf(stderr, "residualClutterFilter: First medfilt at: %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
-    RaveData2D_setNodata(Zout, self->residualClutterNodata);
+    RaveData2D_setNodata(Zout, residualClutterNodata);
     RaveData2D_useNodata(Zout, 1);
     textureZout = PdpProcessor_texture(self, Zout);
 
@@ -1756,7 +1218,7 @@ RaveData2D_t* PdpProcessor_residualClutterFilter(PdpProcessor_t* self, RaveData2
           RaveData2D_setValueUnchecked(Zout, x, y, minZ);
         }
         RaveData2D_getValueUnchecked(Zout, x, y, &v);
-        if (v >= self->residualClutterTextureFilteringMaxZ) {
+        if (v >= residualClutterTextureFilteringMaxZ) {
           RaveData2D_setValueUnchecked(Zout, x, y, minZ);
         }
       }
@@ -1774,15 +1236,15 @@ RaveData2D_t* PdpProcessor_residualClutterFilter(PdpProcessor_t* self, RaveData2
           RaveData2D_setValueUnchecked(medZ, x, y, minZ);
           v = minZ;
         }
-        if (v <= self->residualMinZClutterThreshold) {
-          RaveData2D_setValueUnchecked(mask, x, y, self->residualClutterMaskNodata);
+        if (v <= residualMinZClutterThreshold) {
+          RaveData2D_setValueUnchecked(mask, x, y, residualClutterMaskNodata);
         }
       }
     }
   }
   // fprintf(stderr, "residualClutterFilter: Done: %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
-  RaveData2D_setNodata(mask, self->residualClutterMaskNodata);
+  RaveData2D_setNodata(mask, residualClutterMaskNodata);
   RaveData2D_useNodata(mask, 1);
 
   result = RAVE_OBJECT_COPY(mask);
@@ -1805,6 +1267,7 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
   RaveData2D_t *pdpres = NULL, *kdpres = NULL;
   RaveData2D_t *stdK = NULL;
   RaveData2D_t *tmp = NULL, *tmp2 = NULL;
+  double kdpUp, kdpDown, kdpStdThreshold;
 
   // long long starttime = PdpProcessorInternal_timestamp();
 
@@ -1833,6 +1296,9 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
   if (pdpres == NULL || kdpres == NULL) {
     goto done;
   }
+  kdpUp = PpcRadarOptions_getKdpUp(self->options);
+  kdpDown = PpcRadarOptions_getKdpDown(self->options);
+  kdpStdThreshold = PpcRadarOptions_getKdpStdThreshold(self->options);
 
   // starttime = PdpProcessorInternal_timestamp();
   // fprintf(stderr, "pdpProcessing: Initialization %ld\n", PdpProcessorInternal_timestamp() - starttime);
@@ -1851,34 +1317,30 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
       RaveData2D_getValueUnchecked(pdpres, axi, y, &Ax);
       RaveData2D_getValueUnchecked(pdpres, bxi, y, &Bx);
       Kdpv = 0.5 * (Bx - Ax) / 2 * dr * window;
-      if (Kdpv < self->kdpDown || Kdpv > self->kdpUp) {
+      if (Kdpv < kdpDown || Kdpv > kdpUp) {
         Kdpv = 0.0;
       }
       if (x < window || x >= xsize - window ) { /* Side effects compensation */
         Kdpv = 0.0;
       }
-      if (Kdpv > self->kdpStdThreshold) {
+      if (Kdpv > kdpStdThreshold) {
         Kdpv = 0.0;
       }
       RaveData2D_setValueUnchecked(kdpres, x, y, Kdpv);
     }
   }
-  // fprintf(stderr, "pdpProcessing: First loop %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
   stdK = RaveData2D_movingstd(kdpres, window, 0); /* In matlab they use 0, window as inparam, but they are used as window, 0 in array...... */
-
-  // fprintf(stderr, "pdpProcessing: Moving std %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
   for (x = 0; x < xsize; x++) {
     for (y = 0; y < ysize; y++) {
       double v = 0.0;
       RaveData2D_getValueUnchecked(stdK,  x, y, &v);
-      if (v > self->kdpStdThreshold) {
+      if (v > kdpStdThreshold) {
         RaveData2D_setValueUnchecked(kdpres, x, y, 0.0);
       }
     }
   }
-  // fprintf(stderr, "pdpProcessing: Second loop %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
   for (ki = 0; ki < nrIter; ki++) {
     RAVE_OBJECT_RELEASE(tmp);
@@ -1892,7 +1354,7 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
       for (y = 0; y < ysize; y++) {
         double v = 0.0;
         RaveData2D_getValueUnchecked(tmp, x, y, &v);
-        if (v < self->kdpDown) {
+        if (v < kdpDown) {
           RaveData2D_setValueUnchecked(tmp, x, y, 0.0);
         }
       }
@@ -1925,13 +1387,13 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
         RaveData2D_getValueUnchecked(pdpres, axi, y, &Ax);
         RaveData2D_getValueUnchecked(pdpres, bxi, y, &Bx);
         Kdpv = 0.5 * (Bx - Ax) / 2 * dr * window;
-        if (Kdpv < self->kdpDown || Kdpv > self->kdpUp) {
+        if (Kdpv < kdpDown || Kdpv > kdpUp) {
           Kdpv = 0.0;
         }
         if (x < window || x >= xsize - window ) { /* Side effects compensation */
           Kdpv = 0.0;
         }
-        if (Kdpv > self->kdpStdThreshold) {
+        if (Kdpv > kdpStdThreshold) {
           Kdpv = 0.0;
         }
         RaveData2D_setValueUnchecked(kdpres, x, y, Kdpv);
@@ -1941,22 +1403,17 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
     RAVE_OBJECT_RELEASE(tmp);
     RAVE_OBJECT_RELEASE(tmp2);
   }
-  // fprintf(stderr, "pdpProcessing: Third loop %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
   tmp = RaveData2D_mulNumber(kdpres, 2.0 * dr);
   if (tmp == NULL) {
     goto done;
   }
 
-  // fprintf(stderr, "pdpProcessing: mulNumber %ld\n", PdpProcessorInternal_timestamp() - starttime);
-
   RAVE_OBJECT_RELEASE(pdpres);
   pdpres = RaveData2D_cumsum(tmp, 0);
   if (pdpres == NULL) {
     goto done;
   }
-
-  // fprintf(stderr, "pdpProcessing: cumsum %ld\n", PdpProcessorInternal_timestamp() - starttime);
 
   *pdpf = RAVE_OBJECT_COPY(pdpres);
   *kdp = RAVE_OBJECT_COPY(kdpres);
@@ -1981,6 +1438,8 @@ int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, d
   RaveData2D_t* texture = NULL;
   RaveData2D_t* pdpwork = NULL;
   RaveData2D_t *pdpres = NULL, *kdpres = NULL;
+  double processingTextureThreshold, nodata, thresholdPhidp;
+
   RAVE_ASSERT((self != NULL), "self == NULL");
   if (pdp == NULL) {
     RAVE_ERROR0("pdp == NULL");
@@ -1996,9 +1455,13 @@ int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, d
     goto done;
   }
 
+  nodata = PpcRadarOptions_getNodata(self->options);
+  processingTextureThreshold = PpcRadarOptions_getProcessingTextureThreshold(self->options);
+  thresholdPhidp = PpcRadarOptions_getThresholdPhidp(self->options);
+
   window = round(rWin1/ dr);
-  if (window < self->minWindow) {
-    window = self->minWindow;
+  if (window < PpcRadarOptions_getMinWindow(self->options)) {
+    window = PpcRadarOptions_getMinWindow(self->options);
   }
 
   xsize = RaveData2D_getXsize(pdp);
@@ -2013,8 +1476,8 @@ int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, d
     for (y = 0; y < ysize; y++) {
       double v = 0.0;
       RaveData2D_getValueUnchecked(texture, x, y, &v);
-      if (v > self->processingTextureThreshold) {
-        RaveData2D_setValueUnchecked(pdpwork, x, y, self->nodata);
+      if (v > processingTextureThreshold) {
+        RaveData2D_setValueUnchecked(pdpwork, x, y, nodata);
       }
     }
   }
@@ -2027,7 +1490,7 @@ int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, d
     for (y = 0; isempty == 1 && y < ysize; y++) {
       double v = 0.0;
       RaveData2D_getValueUnchecked(pdpres, x, y, &v);
-      if (v > self->thresholdPhidp) {
+      if (v > thresholdPhidp) {
         isempty = 0;
       }
     }
@@ -2035,8 +1498,8 @@ int PdpProcessor_pdpScript(PdpProcessor_t* self, RaveData2D_t* pdp, double dr, d
 
   if (!isempty && rWin2 < rWin1) {
     window = round(rWin2/dr);
-    if (window < self->minWindow) {
-      window = self->minWindow;
+    if (window < PpcRadarOptions_getMinWindow(self->options)) {
+      window = PpcRadarOptions_getMinWindow(self->options);
     }
     RAVE_OBJECT_RELEASE(pdpres);
     RAVE_OBJECT_RELEASE(kdpres);
@@ -2069,7 +1532,10 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
   double dbzhnodata = 0.0;
   RaveData2D_t *PIA = NULL, *PIDA = NULL;
   RaveData2D_t *zdrres = NULL, *zres = NULL, *dbzhres = NULL;
+  double attenuationPIAminZ;
+
   RAVE_ASSERT((self != NULL), "self == NULL");
+
   if (Z == NULL || zdr == NULL || pdp == NULL || mask == NULL) {
     RAVE_ERROR0("Z, zdr, pdp or mask is NULL");
     goto done;
@@ -2145,6 +1611,8 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
     goto done;
   }
 
+  attenuationPIAminZ = PpcRadarOptions_getAttenuationPIAminZ(self->options);
+
   for (ri = 0; ri < nrays; ri++) {
     for (bi = 0; bi < nbins; bi++) {
       double vz = 0, vpia = 0, vzdr = 0, vpida = 0, vdbzh = 0;
@@ -2163,7 +1631,7 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
       }
 
       RaveData2D_getValueUnchecked(zres, bi, ri, &vz);
-      if (vz < self->attenuationPIAminZ) {
+      if (vz < attenuationPIAminZ) {
         RaveData2D_setValueUnchecked(PIA, bi, ri, vpianodata);
       }
     }

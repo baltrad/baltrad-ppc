@@ -146,6 +146,25 @@ static PyObject* _pyppcradaroptions_new(PyObject* self, PyObject* args)
   return (PyObject*)PyPpcRadarOptions_New(NULL);
 }
 
+
+static PyObject* _pyppcradaroptions_setBand(PyPpcRadarOptions* self, PyObject* args)
+{
+  char* c;
+  if (!PyArg_ParseTuple(args, "s", &c))
+    return NULL;
+
+  if (strlen(c) != 1 ||
+      (c[0] != 's' && c[0] != 'c' && c[0] != 'x')) {
+    raiseException_returnNULL(PyExc_ValueError, "Band must be either s, c or x");
+  }
+
+  if (!PpcRadarOptions_setBand(self->options, c[0])) {
+    raiseException_returnNULL(PyExc_RuntimeError, "Failure to set band");
+  }
+
+  Py_RETURN_NONE;
+}
+
 /**
  * All methods a ppc radar options can have
  */
@@ -189,6 +208,8 @@ static struct PyMethodDef _pyppcradaroptions_methods[] =
   {"pdpNrIterations", NULL},
   {"minZMedfilterThreshold", NULL},
   {"processingTextureThreshold", NULL},
+  {"setBand", (PyCFunction)_pyppcradaroptions_setBand, 1},
+
   {NULL, NULL} /* sentinel */
 };
 

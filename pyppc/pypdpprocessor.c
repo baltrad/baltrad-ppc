@@ -31,7 +31,7 @@ along with baltrad-ppc.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PYPDPPROCESSOR_MODULE   /**< to get correct part in pypdpprocessor */
 #include "pypdpprocessor.h"
-
+#include "pyppcradaroptions.h"
 #include "pypolarscan.h"
 #include "pyrave_debug.h"
 #include "rave_alloc.h"
@@ -141,30 +141,10 @@ static void _pypdpprocessor_dealloc(PyPdpProcessor* obj)
  */
 static PyObject* _pypdpprocessor_new(PyObject* self, PyObject* args)
 {
-  //PyObject* inptr = NULL;
-
   if (!PyArg_ParseTuple(args, "")) {
     return NULL;
   }
   return (PyObject*)PyPdpProcessor_New(NULL);
-}
-
-static PyObject* _pypdpprocessor_setBand(PyPdpProcessor* self, PyObject* args)
-{
-  char* c;
-  if (!PyArg_ParseTuple(args, "s", &c))
-    return NULL;
-
-  if (strlen(c) != 1 ||
-      (c[0] != 's' && c[0] != 'c' && c[0] != 'x')) {
-    raiseException_returnNULL(PyExc_ValueError, "Band must be either s, c or x");
-  }
-
-  if (!PdpProcessor_setBand(self->processor, c[0])) {
-    raiseException_returnNULL(PyExc_RuntimeError, "Failure to set band");
-  }
-
-  Py_RETURN_NONE;
 }
 
 /**
@@ -220,10 +200,6 @@ static PyObject* _pypdpprocessor_trap(PyPdpProcessor* self, PyObject* args)
   RAVE_OBJECT_RELEASE(trapResult);
   return result;
 }
-
-//RaveData2D_t* PdpProcessor_clutterID(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* VRADH,
-//RaveData2D_t* texturePHIDP, RaveData2D_t* RHOHV, RaveData2D_t* textureZ, RaveData2D_t* clutterMap, double nodataZ, double nodataVRADH)
-
 
 static PyObject* _pypdpprocessor_clutterID(PyPdpProcessor* self, PyObject* args)
 {
@@ -531,43 +507,7 @@ done:
  */
 static struct PyMethodDef _pypdpprocessor_methods[] =
 {
-  {"minWindow", NULL},
-  {"parametersUZ", NULL},
-  {"parametersVEL", NULL},
-  {"parametersTEXT_PHIDP", NULL},
-  {"parametersRHV", NULL},
-  {"parametersTEXT_UZ", NULL},
-  {"parametersCLUTTER_MAP", NULL},
-  {"nodata", NULL},
-  {"minDBZ", NULL},
-  {"qualityThreshold", NULL},
-  {"preprocessZThreshold", NULL},
-  {"kdpUp", NULL},
-  {"kdpDown", NULL},
-  {"kdpStdThreshold", NULL},
-  {"BB", NULL},
-  {"thresholdPhidp", NULL},
-  {"requestedFields", NULL},
-  {"residualMinZClutterThreshold", NULL},
-  {"residualThresholdZ", NULL},
-  {"residualThresholdTexture", NULL},
-  {"residualClutterNodata", NULL},
-  {"residualClutterMaskNodata", NULL},
-  {"residualClutterTextureFilteringMaxZ", NULL},
-  {"residualFilterBinSize", NULL},
-  {"residualFilterRaySize", NULL},
-  {"minAttenuationMaskRHOHV", NULL},
-  {"minAttenuationMaskKDP", NULL},
-  {"minAttenuationMaskTH", NULL},
-  {"attenuationGammaH", NULL},
-  {"attenuationAlpha", NULL},
-  {"attenuationPIAminZ", NULL},
-  {"pdpRWin1", NULL},
-  {"pdpRWin2", NULL},
-  {"pdpNrIterations", NULL},
-  {"minZMedfilterThreshold", NULL},
-  {"processingTextureThreshold", NULL},
-  {"setBand", (PyCFunction)_pypdpprocessor_setBand, 1},
+  {"options", NULL},
   {"texture", (PyCFunction)_pypdpprocessor_texture, 1},
   {"trap", (PyCFunction)_pypdpprocessor_trap, 1},
   {"clutterID", (PyCFunction)_pypdpprocessor_clutterID, 1},
@@ -587,90 +527,11 @@ static struct PyMethodDef _pypdpprocessor_methods[] =
  */
 static PyObject* _pypdpprocessor_getattro(PyPdpProcessor* self, PyObject* name)
 {
-  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
-    return PyInt_FromLong(PdpProcessor_getMinWindow(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersUZ") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    PdpProcessor_getParametersUZ(self->processor, &weight, &X2, &X3, &delta1, &delta2);
-    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersVEL") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    PdpProcessor_getParametersVEL(self->processor, &weight, &X2, &X3, &delta1, &delta2);
-    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_PHIDP") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    PdpProcessor_getParametersTEXT_PHIDP(self->processor, &weight, &X2, &X3, &delta1, &delta2);
-    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersRHV") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    PdpProcessor_getParametersRHV(self->processor, &weight, &X2, &X3, &delta1, &delta2);
-    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_UZ") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    PdpProcessor_getParametersTEXT_UZ(self->processor, &weight, &X2, &X3, &delta1, &delta2);
-    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersCLUTTER_MAP") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    PdpProcessor_getParametersCLUTTER_MAP(self->processor, &weight, &X2, &X3, &delta1, &delta2);
-    return Py_BuildValue("(ddddd)", weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "nodata") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getNodata(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minDBZ") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getMinDBZ(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "qualityThreshold") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getQualityThreshold(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpUp") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getKdpUp(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpDown") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getKdpDown(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpStdThreshold") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getKdpStdThreshold(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "requestedFields") == 0) {
-    return PyLong_FromLong(PdpProcessor_getRequestedFields(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualMinZClutterThreshold") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getResidualMinZClutterThreshold(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualThresholdZ") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getResidualThresholdZ(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualThresholdTexture") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getResidualThresholdTexture(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualClutterNodata") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getResidualClutterNodata(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualClutterMaskNodata") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getResidualClutterMaskNodata(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualClutterTextureFilteringMaxZ") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getResidualClutterTextureFilteringMaxZ(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualFilterBinSize") == 0) {
-    return PyLong_FromLong(PdpProcessor_getResidualFilterBinSize(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualFilterRaySize") == 0) {
-    return PyLong_FromLong(PdpProcessor_getResidualFilterRaySize(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minAttenuationMaskRHOHV") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getMinAttenuationMaskRHOHV(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minAttenuationMaskKDP") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getMinAttenuationMaskKDP(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minAttenuationMaskTH") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getMinAttenuationMaskTH(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "attenuationGammaH") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getAttenuationGammaH(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "attenuationAlpha") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getAttenuationAlpha(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "attenuationPIAminZ") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getAttenuationPIAminZ(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "pdpRWin1") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getPdpRWin1(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "pdpRWin2") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getPdpRWin2(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "pdpNrIterations") == 0) {
-    return PyLong_FromLong(PdpProcessor_getPdpNrIterations(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minZMedfilterThreshold") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getMinZMedfilterThreshold(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "processingTextureThreshold") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getProcessingTextureThreshold(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "BB") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getBB(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "thresholdPhidp") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getThresholdPhidp(self->processor));
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "preprocessZThreshold") == 0) {
-    return PyFloat_FromDouble(PdpProcessor_getPreprocessZThreshold(self->processor));
+  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "options") == 0) {
+    PpcRadarOptions_t* options = PdpProcessor_getRadarOptions(self->processor);
+    PyObject* result = (PyObject*)PyPpcRadarOptions_New(options);
+    RAVE_OBJECT_RELEASE(options);
+    return result;
   }
 
   return PyObject_GenericGetAttr((PyObject*)self, name);
@@ -685,323 +546,13 @@ static int _pypdpprocessor_setattro(PyPdpProcessor* self, PyObject* name, PyObje
   if (name == NULL) {
     goto done;
   }
-  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
-    if (PyLong_Check(val)) {
-      PdpProcessor_setMinWindow(self->processor, PyLong_AsLong(val));
+  if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "options") == 0) {
+    if (PyPpcRadarOptions_Check(val)) {
+      PpcRadarOptions_t* options = PyPpcRadarOptions_GetNative((PyPpcRadarOptions*)val);
+      PdpProcessor_setRadarOptions(self->processor, options);
+      RAVE_OBJECT_RELEASE(options);
     } else {
-      raiseException_gotoTag(done, PyExc_TypeError, "nodata must be of type int");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersUZ") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
-      goto done;
-    PdpProcessor_setParametersUZ(self->processor, weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersVEL") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
-      goto done;
-    PdpProcessor_setParametersVEL(self->processor, weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_PHIDP") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
-      goto done;
-    PdpProcessor_setParametersTEXT_PHIDP(self->processor, weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersRHV") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
-      goto done;
-    PdpProcessor_setParametersRHV(self->processor, weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersTEXT_UZ") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
-      goto done;
-    PdpProcessor_setParametersTEXT_UZ(self->processor, weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersCLUTTER_MAP") == 0) {
-    double weight, X2, X3, delta1, delta2;
-    if (!PyArg_ParseTuple(val, "ddddd", &weight, &X2, &X3, &delta1, &delta2))
-      goto done;
-    PdpProcessor_setParametersCLUTTER_MAP(self->processor, weight, X2, X3, delta1, delta2);
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "nodata") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setNodata(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setNodata(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setNodata(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "nodata must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minDBZ") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setMinDBZ(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setMinDBZ(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setMinDBZ(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "minDBZ must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "qualityThreshold") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setQualityThreshold(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setQualityThreshold(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setQualityThreshold(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "qualityThreshold must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpUp") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setKdpUp(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setKdpUp(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setKdpUp(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "kdpUp must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpDown") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setKdpDown(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setKdpDown(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setKdpDown(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "kdpDown must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "kdpStdThreshold") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setKdpStdThreshold(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setKdpStdThreshold(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setKdpStdThreshold(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "kdpStdThreshold must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "requestedFields") == 0) {
-    if (PyLong_Check(val)) {
-      PdpProcessor_setRequestedFields(self->processor, (int)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setRequestedFields(self->processor, (int)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "requestedFields must be of integer");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualMinZClutterThreshold") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setResidualMinZClutterThreshold(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setResidualMinZClutterThreshold(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualMinZClutterThreshold(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualMinZClutterThreshold must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualThresholdZ") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setResidualThresholdZ(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setResidualThresholdZ(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualThresholdZ(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualThresholdZ must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualThresholdTexture") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setResidualThresholdTexture(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setResidualThresholdTexture(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualThresholdTexture(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualThresholdTexture must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualClutterNodata") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setResidualClutterNodata(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setResidualClutterNodata(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualClutterNodata(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualClutterNodata must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualClutterMaskNodata") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setResidualClutterMaskNodata(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setResidualClutterMaskNodata(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualClutterMaskNodata(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualClutterMaskNodata must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualClutterTextureFilteringMaxZ") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setResidualClutterTextureFilteringMaxZ(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setResidualClutterTextureFilteringMaxZ(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualClutterTextureFilteringMaxZ(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualClutterTextureFilteringMaxZ must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualFilterBinSize") == 0) {
-    if (PyLong_Check(val)) {
-      PdpProcessor_setResidualFilterBinSize(self->processor, (int)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualFilterBinSize(self->processor, (int)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualFilterBinSize must be of integer");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "residualFilterRaySize") == 0) {
-    if (PyLong_Check(val)) {
-      PdpProcessor_setResidualFilterRaySize(self->processor, (int)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setResidualFilterRaySize(self->processor, (int)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "residualFilterRaySize must be of integer");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minAttenuationMaskRHOHV") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskRHOHV(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskRHOHV(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskRHOHV(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "minAttenuationMaskRHOHV must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minAttenuationMaskKDP") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskKDP(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskKDP(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskKDP(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "minAttenuationMaskKDP must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minAttenuationMaskTH") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskTH(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskTH(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setMinAttenuationMaskTH(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "minAttenuationMaskTH must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "attenuationGammaH") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setAttenuationGammaH(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setAttenuationGammaH(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setAttenuationGammaH(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "attenuationGammaH must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "attenuationAlpha") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setAttenuationAlpha(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setAttenuationAlpha(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setAttenuationAlpha(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "attenuationAlpha must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "attenuationPIAminZ") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setAttenuationPIAminZ(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setAttenuationPIAminZ(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setAttenuationPIAminZ(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "attenuationPIAminZ must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "pdpRWin1") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setPdpRWin1(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setPdpRWin1(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setPdpRWin1(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "pdpRWin1 must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "pdpRWin2") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setPdpRWin2(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setPdpRWin2(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setPdpRWin2(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "pdpRWin2 must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "pdpNrIterations") == 0) {
-    if (PyLong_Check(val)) {
-      PdpProcessor_setPdpNrIterations(self->processor, (int)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setPdpNrIterations(self->processor, (int)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "pdpNrIterations must be of integer");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minZMedfilterThreshold") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setMinZMedfilterThreshold(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setMinZMedfilterThreshold(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setMinZMedfilterThreshold(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "minZMedfilterThreshold must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "processingTextureThreshold") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setProcessingTextureThreshold(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setProcessingTextureThreshold(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setProcessingTextureThreshold(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "processingTextureThreshold must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "BB") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setBB(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setBB(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setBB(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "BB must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "thresholdPhidp") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setThresholdPhidp(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setThresholdPhidp(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setThresholdPhidp(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "thresholdPhidp must be of type float or long");
-    }
-  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "preprocessZThreshold") == 0) {
-    if (PyFloat_Check(val)) {
-      PdpProcessor_setPreprocessZThreshold(self->processor, PyFloat_AsDouble(val));
-    } else if (PyLong_Check(val)) {
-      PdpProcessor_setPreprocessZThreshold(self->processor, (double)PyLong_AsLong(val));
-    } else if (PyInt_Check(val)) {
-      PdpProcessor_setPreprocessZThreshold(self->processor, (double)PyInt_AsLong(val));
-    } else {
-      raiseException_gotoTag(done, PyExc_ValueError, "preprocessZThreshold must be of type float or long");
+      raiseException_gotoTag(done, PyExc_TypeError, "options must be of type PpcRadarOptions");
     }
   } else {
     raiseException_gotoTag(done, PyExc_AttributeError, PY_RAVE_ATTRO_NAME_TO_STRING(name));
@@ -1070,22 +621,6 @@ static PyMethodDef functions[] = {
   {NULL,NULL} /*Sentinel*/
 };
 
-/**
- * Adds constants to the dictionary (probably the modules dictionary).
- * @param[in] dictionary - the dictionary the long should be added to
- * @param[in] name - the name of the constant
- * @param[in] value - the value
- */
-static void add_long_constant(PyObject* dictionary, const char* name, long value)
-{
-  PyObject* tmp = NULL;
-  tmp = PyInt_FromLong(value);
-  if (tmp != NULL) {
-    PyDict_SetItemString(dictionary, name, tmp);
-  }
-  Py_XDECREF(tmp);
-}
-
 MOD_INIT(_pdpprocessor)
 {
   PyObject *module=NULL,*dictionary=NULL;
@@ -1116,20 +651,8 @@ MOD_INIT(_pdpprocessor)
     return MOD_INIT_ERROR;
   }
 
-  add_long_constant(dictionary, "P_TH_CORR", PdpProcessor_TH_CORR);
-  add_long_constant(dictionary, "P_ATT_TH_CORR", PdpProcessor_ATT_TH_CORR);
-  add_long_constant(dictionary, "P_DBZH_CORR", PdpProcessor_DBZH_CORR);
-  add_long_constant(dictionary, "P_ATT_DBZH_CORR", PdpProcessor_ATT_DBZH_CORR);
-  add_long_constant(dictionary, "P_KDP_CORR", PdpProcessor_KDP_CORR);
-  add_long_constant(dictionary, "P_RHOHV_CORR", PdpProcessor_RHOHV_CORR);
-  add_long_constant(dictionary, "P_PHIDP_CORR", PdpProcessor_PHIDP_CORR);
-  add_long_constant(dictionary, "P_ZDR_CORR", PdpProcessor_ZDR_CORR);
-  add_long_constant(dictionary, "P_ZPHI_CORR", PdpProcessor_ZPHI_CORR);
-  add_long_constant(dictionary, "Q_RESIDUAL_CLUTTER_MASK", PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK);
-  add_long_constant(dictionary, "Q_ATTENUATION_MASK", PdpProcessor_QUALITY_ATTENUATION_MASK);
-  add_long_constant(dictionary, "Q_ATTENUATION", PdpProcessor_QUALITY_ATTENUATION);
-
   import_pypolarscan();
+  import_ppcradaroptions();
   import_ravedata2d();
   PYRAVE_DEBUG_INITIALIZE;
   return MOD_INIT_SUCCESS(module);

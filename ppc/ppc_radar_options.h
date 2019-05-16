@@ -95,6 +95,17 @@ void PpcRadarOptions_setRequestedFields(PpcRadarOptions_t* self, int fieldmask);
 int PpcRadarOptions_getRequestedFields(PpcRadarOptions_t* self);
 
 /**
+ * Helper function that sets kdpUp, kdpDown and kdpStdThreshold to predfined values.
+ * band = 's' => kdpUp = 14, kdpDown=-2, kdpStdThreshold=5
+ * band = 'c' => kdpUp = 20, kdpDown=-2, kdpStdThreshold=5
+ * band = 'x' => kdpUp = 40, kdpDown=-2, kdpStdThreshold=5
+ * @param[in] self - self
+ * @param[in] band - the band, see above
+ * @returns 1 if band is either 's', 'c' or 'x' else 0 and kdp-values will not be changed.
+ */
+int PpcRadarOptions_setBand(PpcRadarOptions_t* self, char band);
+
+/**
  * Sets the upper threshold for the generated kdp field
  * @param[in] self - self
  * @param[in] v - the upper threshold

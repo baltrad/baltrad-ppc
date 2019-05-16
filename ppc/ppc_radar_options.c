@@ -286,6 +286,28 @@ int PpcRadarOptions_getRequestedFields(PpcRadarOptions_t* self)
   return self->requestedFieldMask;
 }
 
+int PpcRadarOptions_setBand(PpcRadarOptions_t* self, char band)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+
+  if (band == 's') {
+    self->kdpUp = 14;
+    self->kdpDown = -2;
+    self->kdpStdThreshold = 5;
+  } else if (band == 'c') {
+    self->kdpUp = 20;
+    self->kdpDown = -2;
+    self->kdpStdThreshold = 5;
+  } else if (band == 'x') {
+    self->kdpUp = 40;
+    self->kdpDown = -2;
+    self->kdpStdThreshold = 5;
+  } else {
+    return 0; // No such band
+  }
+  return 1;
+}
+
 void PpcRadarOptions_setKdpUp(PpcRadarOptions_t* self, double v)
 {
   RAVE_ASSERT((self != NULL), "self == NULL");
