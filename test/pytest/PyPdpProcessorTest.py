@@ -48,7 +48,22 @@ class PyPdpProcessorTest(unittest.TestCase):
 
     a.options = _ppcradaroptions.new()
     self.assertEqual(11, a.options.minWindow)
-
+    
+  def testMeltingLayerBottomHeight(self):
+    a = _pdpprocessor.new()
+    
+    self.assertTrue("meltingLayerBottomHeight" in dir(a))
+    
+    self.assertAlmostEqual(2.463, a.meltingLayerBottomHeight, 3)
+    a.options.meltingLayerBottomHeight = 3.0
+    self.assertAlmostEqual(3.0, a.meltingLayerBottomHeight, 3)
+    a.meltingLayerBottomHeight = 1.0
+    self.assertAlmostEqual(1.0, a.meltingLayerBottomHeight, 3)
+    self.assertAlmostEqual(3.0, a.options.meltingLayerBottomHeight, 3)
+    a.meltingLayerBottomHeight = -1.0
+    self.assertAlmostEqual(3.0, a.meltingLayerBottomHeight, 3)
+    self.assertAlmostEqual(3.0, a.options.meltingLayerBottomHeight, 3)
+    
   def test_texture(self):
     processor = _pdpprocessor.new()
     data2d = _ravedata2d.new()

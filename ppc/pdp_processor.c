@@ -40,6 +40,7 @@ along with baltrad-ppc.  If not, see <http://www.gnu.org/licenses/>.
  */
 struct _PdpProcessor_t {
   RAVE_OBJECT_HEAD /** Always on top */
+  double meltingLayerBottomHeight;
   PpcRadarOptions_t* options; /**< the processing options */
 };
 
@@ -50,6 +51,7 @@ struct _PdpProcessor_t {
 static int PdpProcessor_constructor(RaveCoreObject* obj)
 {
 	PdpProcessor_t* pdp = (PdpProcessor_t*)obj;
+	pdp->meltingLayerBottomHeight = -1.0;
 	pdp->options = RAVE_OBJECT_NEW(&PpcRadarOptions_TYPE);
 	if (pdp->options == NULL) {
 	  return 0;
@@ -73,6 +75,7 @@ static int PdpProcessor_copyconstructor(RaveCoreObject* obj, RaveCoreObject* src
 {
   PdpProcessor_t* this = (PdpProcessor_t*)obj;
   PdpProcessor_t* src = (PdpProcessor_t*)srcobj;
+  this->meltingLayerBottomHeight = src->meltingLayerBottomHeight;
   this->options = RAVE_OBJECT_CLONE(src->options);
   if (this->options == NULL) {
     return 0;
@@ -525,7 +528,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     double vRHOHV = 0, vKDP = 0, vTH = 0;
     PolarNavigator_reToDh(navigator, range * ((double)bi+0.5), elangle, &d, &h);
     h = h / 1000.0;
-    if (h < PdpProcessor_getMeltingLayerBottomHeight(scan)) {
+    if (h < PdpProcessor_getMeltingLayerBottomHeight(self)) {
       for (ri = 0; ri < nrays; ri++) {
         RaveData2D_getValueUnchecked(dataRHOHV, bi, ri, &vRHOHV);
         RaveData2D_getValueUnchecked(outKDP, bi, ri, &vKDP);
@@ -706,10 +709,18 @@ done:
   return result;
 }
 
-double PdpProcessor_getMeltingLayerBottomHeight(PolarScan_t* scan)
+void PdpProcessor_setMeltingLayerBottomHeight(PdpProcessor_t* self, double height)
+{
+  self->meltingLayerBottomHeight = height;
+}
+
+double PdpProcessor_getMeltingLayerBottomHeight(PdpProcessor_t* self)
 {
   /* @TODO: implement proper support for this */
-  return 2.463;
+  if (self->meltingLayerBottomHeight <= -1.0) {
+    return PpcRadarOptions_getMeltingLayerBottomHeight(self->options);
+  }
+  return self->meltingLayerBottomHeight;
 }
 
 RaveData2D_t* PdpProcessor_texture(PdpProcessor_t* self, RaveData2D_t* X)

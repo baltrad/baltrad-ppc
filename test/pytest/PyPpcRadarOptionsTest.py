@@ -451,6 +451,15 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     self.assertAlmostEqual(-30.0, a.attenuationPIAminZ, 3)
     a.attenuationPIAminZ = 1
     self.assertAlmostEqual(1.0, a.attenuationPIAminZ, 3);
+
+  def testMeltingLayerBottomHeight(self):
+    a = _ppcradaroptions.new()
+    
+    self.assertTrue("meltingLayerBottomHeight" in dir(a))
+    
+    self.assertAlmostEqual(2.463, a.meltingLayerBottomHeight, 3)
+    a.meltingLayerBottomHeight = 1
+    self.assertAlmostEqual(1.0, a.meltingLayerBottomHeight, 3);
     
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']

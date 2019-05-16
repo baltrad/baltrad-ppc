@@ -508,6 +508,7 @@ done:
 static struct PyMethodDef _pypdpprocessor_methods[] =
 {
   {"options", NULL},
+  {"meltingLayerBottomHeight", NULL},
   {"texture", (PyCFunction)_pypdpprocessor_texture, 1},
   {"trap", (PyCFunction)_pypdpprocessor_trap, 1},
   {"clutterID", (PyCFunction)_pypdpprocessor_clutterID, 1},
@@ -532,6 +533,8 @@ static PyObject* _pypdpprocessor_getattro(PyPdpProcessor* self, PyObject* name)
     PyObject* result = (PyObject*)PyPpcRadarOptions_New(options);
     RAVE_OBJECT_RELEASE(options);
     return result;
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "meltingLayerBottomHeight") == 0) {
+    return PyFloat_FromDouble(PdpProcessor_getMeltingLayerBottomHeight(self->processor));
   }
 
   return PyObject_GenericGetAttr((PyObject*)self, name);
@@ -553,6 +556,16 @@ static int _pypdpprocessor_setattro(PyPdpProcessor* self, PyObject* name, PyObje
       RAVE_OBJECT_RELEASE(options);
     } else {
       raiseException_gotoTag(done, PyExc_TypeError, "options must be of type PpcRadarOptions");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "meltingLayerBottomHeight") == 0) {
+    if (PyFloat_Check(val)) {
+      PdpProcessor_setMeltingLayerBottomHeight(self->processor, PyFloat_AsDouble(val));
+    } else if (PyLong_Check(val)) {
+      PdpProcessor_setMeltingLayerBottomHeight(self->processor, (double)PyLong_AsLong(val));
+    } else if (PyInt_Check(val)) {
+      PdpProcessor_setMeltingLayerBottomHeight(self->processor, (double)PyInt_AsLong(val));
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "meltingLayerBottomHeight must be of type float or long");
     }
   } else {
     raiseException_gotoTag(done, PyExc_AttributeError, PY_RAVE_ATTRO_NAME_TO_STRING(name));

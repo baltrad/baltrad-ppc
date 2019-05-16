@@ -43,20 +43,6 @@ extern RaveCoreObjectType PdpProcessor_TYPE;
  */
 #define TRAP_UNDEF_VALUE -99999999999.0
 
-#define PdpProcessor_TH_CORR        (1)       /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected TH to result */
-#define PdpProcessor_ATT_TH_CORR    (1 << 1)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected and attenuated TH to result */
-#define PdpProcessor_DBZH_CORR      (1 << 2)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected DBZH to result */
-#define PdpProcessor_ATT_DBZH_CORR  (1 << 3)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected and attenuated DBZH to result */
-#define PdpProcessor_KDP_CORR       (1 << 4)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected KDP to result */
-#define PdpProcessor_RHOHV_CORR     (1 << 5)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected RHOHV to result */
-#define PdpProcessor_PHIDP_CORR     (1 << 6)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected PHIDP to result */
-#define PdpProcessor_ZDR_CORR       (1 << 7)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected ZDR to result */
-#define PdpProcessor_ZPHI_CORR      (1 << 8)  /**< Used by @ref #PdpProcessor_setRequestedFields Add Corrected ZPHI to result */
-#define PdpProcessor_QUALITY_RESIDUAL_CLUTTER_MASK (1 << 9) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for residual clutter flag */
-#define PdpProcessor_QUALITY_ATTENUATION_MASK (1 << 10) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for attenuation mask */
-#define PdpProcessor_QUALITY_ATTENUATION (1 << 11) /**< Used by @ref #PdpProcessor_setRequestedFields Add quality flag for actual attenuation */
-
-
 /**
  * Sets the option instance to be used in the processing. Note, the options will be
  * stored as a reference which means that you can directly modify the options instance
@@ -83,9 +69,17 @@ PpcRadarOptions_t* PdpProcessor_getRadarOptions(PdpProcessor_t* self);
 PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan);
 
 /**
- * Returns the bottom melting layer height for the specified scan
+ * Sets the melting layer bottom height. Default is < -1.0 (km) and in that case, the value from the ppc radar options is used.
+ * @param[in] scan - scan
+ * @param[in] height the melting layer bottom height
  */
-double PdpProcessor_getMeltingLayerBottomHeight(PolarScan_t* scan);
+void PdpProcessor_setMeltingLayerBottomHeight(PdpProcessor_t* scan, double height);
+
+/**
+ * @param[in] scan - scan
+ * @returns the bottom melting layer height for the specified scan
+ */
+double PdpProcessor_getMeltingLayerBottomHeight(PdpProcessor_t* scan);
 
 /**
  * Calculates the texture from the data 2d field. Note, X must have nodata and useNodata set.

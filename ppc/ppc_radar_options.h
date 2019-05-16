@@ -366,9 +366,17 @@ void PpcRadarOptions_getParametersCLUTTER_MAP(PpcRadarOptions_t* self, double* w
 void PpcRadarOptions_setParametersCLUTTER_MAP(PpcRadarOptions_t* self, double weight, double X2, double X3, double delta1, double delta2);
 
 /**
- * Returns the bottom melting layer height for the specified scan
+ * Sets the melting layer bottom height.
+ * @param[in] self - self
+ * @param[in] height - the height in km
  */
-double PpcRadarOptions_getMeltingLayerBottomHeight(PolarScan_t* scan);
+void PpcRadarOptions_setMeltingLayerBottomHeight(PpcRadarOptions_t* self, double height);
+
+/**
+ * @returns the bottom melting layer height for the specified scan
+ * @param[in] self - self
+ */
+double PpcRadarOptions_getMeltingLayerBottomHeight(PpcRadarOptions_t* self);
 
 /**
  * Sets the nodata value to be used in most sub-products
