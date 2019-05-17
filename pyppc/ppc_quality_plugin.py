@@ -90,7 +90,7 @@ class ppc_quality_plugin(rave_quality_plugin):
             return obj
           processor = _pdpprocessor.new()
           processor.options = self.get_options(obj)
-          processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+          processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_RESIDUAL_CLUTTER_MASK
           result = processor.process(obj)
           obj.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
           if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
@@ -105,7 +105,7 @@ class ppc_quality_plugin(rave_quality_plugin):
               continue
             processor = _pdpprocessor.new()
             processor.options = self.get_options(obj)
-            processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+            processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_RESIDUAL_CLUTTER_MASK
             result = processor.process(scan)
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
             if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
