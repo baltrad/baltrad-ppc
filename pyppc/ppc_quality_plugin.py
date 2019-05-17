@@ -34,6 +34,7 @@ import _polarscan
 import _polarvolume
 import _pdpprocessor
 import _ppcoptions
+import _ppcradaroptions
 import odim_source
 
 logger = rave_pgf_logger.create_logger()
@@ -57,13 +58,11 @@ class ppc_quality_plugin(rave_quality_plugin):
   def get_options(self, polarobj):
     odim_source.CheckSource(polarobj)
     S = odim_source.ODIM_Source(polarobj.source)
-    try:
+    if self._options.exists(S.nod):
       return self._options.getRadarOptions(S.nod)
-        return copy.deepcopy(ARGS[S.nod])
-    except KeyError:
-        return copy.deepcopy(ARGS["default"])
-
-    
+    elif self._options.exists("default"):
+      return self._options.getRadarOptions("default")
+    return _ppcradaroptions.new()
   
   ##
   # @return a list containing the string se.baltrad.ppc.residual_clutter_mask
@@ -83,7 +82,8 @@ class ppc_quality_plugin(rave_quality_plugin):
           if reprocess_quality_flag == False and obj.findQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask") != None:
             return obj
           processor = _pdpprocessor.new()
-          processor.requestedFields = _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+          processor.options = self.get_options(obj)
+          processor.options.requestedFields = processor.options.requestedFields | _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
           result = processor.process(obj)
           obj.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
           if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
@@ -97,7 +97,8 @@ class ppc_quality_plugin(rave_quality_plugin):
             if reprocess_quality_flag == False and scan.findQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask") != None:
               continue
             processor = _pdpprocessor.new()
-            processor.requestedFields = _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+            processor.options = self.get_options(obj)
+            processor.options.requestedFields = processor.options.requestedFields | _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
             result = processor.process(scan)
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
             if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
