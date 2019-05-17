@@ -101,12 +101,13 @@ class ppc_quality_plugin(rave_quality_plugin):
             obj.addParameter(f)
           
         elif _polarvolume.isPolarVolume(obj):
+          options = self.get_options(obj)
           for i in range(obj.getNumberOfScans()):
             scan = obj.getScan(i)
             if reprocess_quality_flag == False and scan.findQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask") != None:
               continue
             processor = _pdpprocessor.new()
-            processor.options = self.get_options(obj)
+            processor.options = options
             processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_RESIDUAL_CLUTTER_MASK
             result = processor.process(scan)
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
