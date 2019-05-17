@@ -36,11 +36,19 @@ import _pdpprocessor
 import _ppcoptions
 import _ppcradaroptions
 import odim_source
+import os
 
 logger = rave_pgf_logger.create_logger()
 
 CONFIG_FILE = os.path.join(os.path.join(os.path.split(os.path.split(_pdpprocessor.__file__)[0])[0],
                                         'config'), 'ppc_options.xml')
+
+PPC_OPTIONS=None
+try:
+  logger.info("Loading options for %s"%CONFIG_FILE)
+  PPC_OPTIONS=_ppcoptions.load(CONFIG_FILE)
+except:
+  logger.exception("Failed to load options")
 
 # The baltrad-ppc quality plugin
 #
@@ -49,19 +57,18 @@ class ppc_quality_plugin(rave_quality_plugin):
   # Default constructor
   def __init__(self):
     super(ppc_quality_plugin, self).__init__()
-    self.options = None 
-    try:
-      self._options = _ppcoptions.load(CONFIG_FILE)
-    except Exception as e:
-      logger.exception("Failed to load config file %s"%CONFIG_FILE, e)
+    self._options = PPC_OPTIONS 
   
   def get_options(self, polarobj):
     odim_source.CheckSource(polarobj)
     S = odim_source.ODIM_Source(polarobj.source)
-    if self._options.exists(S.nod):
-      return self._options.getRadarOptions(S.nod)
-    elif self._options.exists("default"):
-      return self._options.getRadarOptions("default")
+    if self._options:
+      if self._options.exists(S.nod):
+        return self._options.getRadarOptions(S.nod)
+      elif self._options.exists("default"):
+        return self._options.getRadarOptions("default")
+    if S is not None and S.nod is not None:
+      logger.info("Check configuration, using default radar option for %s"%S.nod)
     return _ppcradaroptions.new()
   
   ##
@@ -83,7 +90,7 @@ class ppc_quality_plugin(rave_quality_plugin):
             return obj
           processor = _pdpprocessor.new()
           processor.options = self.get_options(obj)
-          processor.options.requestedFields = processor.options.requestedFields | _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+          processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_QUALITY_RESIDUAL_CLUTTER_MASK
           result = processor.process(obj)
           obj.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
           if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
@@ -98,7 +105,7 @@ class ppc_quality_plugin(rave_quality_plugin):
               continue
             processor = _pdpprocessor.new()
             processor.options = self.get_options(obj)
-            processor.options.requestedFields = processor.options.requestedFields | _pdpprocessor.P_DBZH_CORR | _pdpprocessor.P_ATT_DBZH_CORR | _pdpprocessor.Q_QUALITY_RESIDUAL_CLUTTER_MASK
+            processor.options.requestedFields = processor.options.requestedFields | _ppcradaroptions.P_DBZH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR | _ppcradaroptions.Q_QUALITY_RESIDUAL_CLUTTER_MASK
             result = processor.process(scan)
             scan.addOrReplaceQualityField(result.getQualityFieldByHowTask("se.baltrad.ppc.residual_clutter_mask"))
             if quality_control_mode != QUALITY_CONTROL_MODE_ANALYZE:
