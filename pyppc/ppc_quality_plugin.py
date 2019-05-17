@@ -64,10 +64,10 @@ class ppc_quality_plugin(rave_quality_plugin):
     S = odim_source.ODIM_Source(polarobj.source)
     if self._options:
       if self._options.exists(S.nod):
-        logger.info("Using %s ppc radar options"%S.nod)
+        #logger.info("Using %s ppc radar options"%S.nod)
         return self._options.getRadarOptions(S.nod)
       elif self._options.exists("default"):
-        logger.info("Using default ppc radar options")
+        #logger.info("Using default ppc radar options")
         return self._options.getRadarOptions("default")
     if S is not None and S.nod is not None:
       logger.info("Check configuration! Using backup default radar option for %s"%S.nod)
