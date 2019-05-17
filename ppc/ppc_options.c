@@ -590,6 +590,12 @@ done:
   return result;
 }
 
+int PpcOptions_exists(PpcOptions_t* self, const char* name)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  return RaveObjectHashTable_exists(self->radaroptions, name);
+}
+
 PpcRadarOptions_t* PpcOptions_getRadarOptions(PpcOptions_t* self, const char* name)
 {
   PpcRadarOptions_t* result = NULL;

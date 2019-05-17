@@ -341,6 +341,20 @@ class PyPpcOptionsTest(unittest.TestCase):
 
     self.assertEqual(_ppcradaroptions.P_TH_CORR|_ppcradaroptions.P_PHIDP_CORR|_ppcradaroptions.Q_ATTENUATION_MASK, a.requestedFields)
 
+
+  def testExists(self):
+    a = _ppcoptions.load(self.FIXTURE_1)
+    self.assertEqual(True, a.exists("default"))
+    self.assertEqual(True, a.exists("uses_standard"))
+    self.assertEqual(True, a.exists("uses_default"))
+    self.assertEqual(True, a.exists("modified_default"))
+    self.assertEqual(True, a.exists("overrided_default"))
+    self.assertEqual(True, a.exists("all_requested_fields"))
+    self.assertEqual(False, a.exists("nisse"))
+    self.assertEqual(False, a.exists("nosuch_default"))
+    
+    
+
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']
   unittest.main()

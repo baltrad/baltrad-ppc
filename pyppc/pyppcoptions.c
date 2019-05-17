@@ -168,14 +168,6 @@ static PyObject* _pyppcoptions_load(PyObject* self, PyObject* args)
   return result;
 }
 
-/**  PyObject* pyin = NULL;
-  PyObject* result = NULL;
- *
- * See \ref PdpProcessor_texture
- * @param[in] self - self
- * @param[in] args -
- * @return self on success otherwise NULL
- */
 static PyObject* _pyppcoptions_getRadarOptions(PyPpcOptions* self, PyObject* args)
 {
   char* radarname = NULL;
@@ -193,6 +185,14 @@ static PyObject* _pyppcoptions_getRadarOptions(PyPpcOptions* self, PyObject* arg
   return result;
 }
 
+static PyObject* _pyppcoptions_exists(PyPpcOptions* self, PyObject* args)
+{
+  char* radarname = NULL;
+  if (!PyArg_ParseTuple(args, "s", &radarname))
+    return NULL;
+  return PyBool_FromLong(PpcOptions_exists(self->options, radarname));
+}
+
 
 /**
  * All methods a ppc  options can have
@@ -200,6 +200,7 @@ static PyObject* _pyppcoptions_getRadarOptions(PyPpcOptions* self, PyObject* arg
 static struct PyMethodDef _pyppcoptions_methods[] =
 {
   {"getRadarOptions", (PyCFunction)_pyppcoptions_getRadarOptions, 1},
+  {"exists", (PyCFunction)_pyppcoptions_exists, 1},
   {NULL, NULL} /* sentinel */
 };
 

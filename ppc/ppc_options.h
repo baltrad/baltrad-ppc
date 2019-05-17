@@ -39,6 +39,18 @@ extern RaveCoreObjectType PpcOptions_TYPE;
 
 PpcOptions_t* PpcOptions_load(const char* filename);
 
+/**
+ * @returns if there are options for the specified (node) name.
+ * @param[in] self - self
+ * @param[in] name - the node name
+ */
+int PpcOptions_exists(PpcOptions_t* self, const char* name);
+
+/**
+ * @returns the options for the specified (node) name.
+ * @param[in] self - self
+ * @param[in] name - the node name
+ */
 PpcRadarOptions_t* PpcOptions_getRadarOptions(PpcOptions_t* self, const char* name);
 
 /**

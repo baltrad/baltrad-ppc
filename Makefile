@@ -39,7 +39,7 @@ install: def.mk
 	$(MAKE) -C ppc install
 	$(MAKE) -C pyppc install
 	#$(MAKE) -C bin install
-	#$(MAKE) -C config install
+	$(MAKE) -C config install
 	@echo "################################################################"
 	@echo "To run the binaries you will need to setup your library path to"
 	@echo "LD_LIBRARY_PATH="`cat def.mk | grep LD_PRINTOUT | sed -e"s/LD_PRINTOUT=//"`
@@ -58,6 +58,7 @@ test: def.mk
 clean:
 	$(MAKE) -C ppc clean
 	$(MAKE) -C pyppc clean
+	$(MAKE) -C config clean
 	#$(MAKE) -C bin clean
 	#$(MAKE) -C doxygen distclean
 	$(MAKE) -C test/pytest clean
@@ -66,6 +67,7 @@ clean:
 distclean:
 	$(MAKE) -C ppc distclean
 	$(MAKE) -C pyppc distclean
+	$(MAKE) -C config distclean
 	#$(MAKE) -C bin distclean
 	#$(MAKE) -C doxygen distclean
 	$(MAKE) -C test/pytest distclean

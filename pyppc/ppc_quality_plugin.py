@@ -33,8 +33,13 @@ import rave_pgf_logger
 import _polarscan
 import _polarvolume
 import _pdpprocessor
+import _ppcoptions
+import odim_source
 
 logger = rave_pgf_logger.create_logger()
+
+CONFIG_FILE = os.path.join(os.path.join(os.path.split(os.path.split(_pdpprocessor.__file__)[0])[0],
+                                        'config'), 'ppc_options.xml')
 
 # The baltrad-ppc quality plugin
 #
@@ -43,6 +48,22 @@ class ppc_quality_plugin(rave_quality_plugin):
   # Default constructor
   def __init__(self):
     super(ppc_quality_plugin, self).__init__()
+    self.options = None 
+    try:
+      self._options = _ppcoptions.load(CONFIG_FILE)
+    except Exception as e:
+      logger.exception("Failed to load config file %s"%CONFIG_FILE, e)
+  
+  def get_options(self, polarobj):
+    odim_source.CheckSource(polarobj)
+    S = odim_source.ODIM_Source(polarobj.source)
+    try:
+      return self._options.getRadarOptions(S.nod)
+        return copy.deepcopy(ARGS[S.nod])
+    except KeyError:
+        return copy.deepcopy(ARGS["default"])
+
+    
   
   ##
   # @return a list containing the string se.baltrad.ppc.residual_clutter_mask
