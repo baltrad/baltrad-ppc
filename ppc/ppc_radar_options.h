@@ -379,6 +379,19 @@ void PpcRadarOptions_setMeltingLayerBottomHeight(PpcRadarOptions_t* self, double
 double PpcRadarOptions_getMeltingLayerBottomHeight(PpcRadarOptions_t* self);
 
 /**
+ * Sets the number of hours before default height should be used.
+ * @param[in] self - self
+ * @param[in] hours - number of hours
+ */
+void PpcRadarOptions_setMeltingLayerHourThreshold(PpcRadarOptions_t* self, long hours);
+
+/**
+ * @returns the number of hours before default height should be used.
+ * @param[in] self - self
+ */
+long PpcRadarOptions_getMeltingLayerHourThreshold(PpcRadarOptions_t* self);
+
+/**
  * Sets the nodata value to be used in most sub-products
  * @param[in] self - self
  * @param[in] nodata - the nodata value

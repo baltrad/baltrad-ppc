@@ -42,6 +42,9 @@
     <attenuationAlpha				value="333.5" />
     <attenuationPIAminZ				value="333.6" />
 
+	<meltingLayerBottomHeight		value="444.1" />
+	<meltingLayerHourThreshold		value="5" />
+
 	<requestedFields				value="P_TH_CORR|P_PHIDP_CORR|Q_ATTENUATION_MASK" />
   </radaroptions>
 

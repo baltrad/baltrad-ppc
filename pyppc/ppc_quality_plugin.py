@@ -106,7 +106,7 @@ class ppc_quality_plugin(rave_quality_plugin):
           if not nodomdb and nod is not None:
             try:
               db = rave_dom_db.create_db_from_conf()
-              latest=db.get_latest_melting_layer(nod)
+              latest=db.get_latest_melting_layer(nod, processor.options.meltingLayerHourThreshold)
               if latest is not None and latest.bottom is not None:
                 processor.meltingLayerBottomHeight = latest.bottom
             except Exception as e:
@@ -125,7 +125,7 @@ class ppc_quality_plugin(rave_quality_plugin):
           if not nodomdb and nod is not None:
             try:
               db = rave_dom_db.create_db_from_conf()
-              latest=db.get_latest_melting_layer(nod)
+              latest=db.get_latest_melting_layer(nod, options.meltingLayerHourThreshold)
               if latest is not None and latest.bottom is not None:
                 meltingLayer = latest.bottom
             except Exception as e:

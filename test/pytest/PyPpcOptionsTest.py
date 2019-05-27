@@ -96,6 +96,9 @@ class PyPpcOptionsTest(unittest.TestCase):
     self.assertAlmostEqual(333.5, a.attenuationAlpha, 3)    
     self.assertAlmostEqual(333.6, a.attenuationPIAminZ, 3)    
 
+    self.assertAlmostEqual(444.1, a.meltingLayerBottomHeight, 3)    
+    self.assertEqual(5, a.meltingLayerHourThreshold)
+    
     self.assertEqual(_ppcradaroptions.P_TH_CORR|_ppcradaroptions.P_PHIDP_CORR|_ppcradaroptions.Q_ATTENUATION_MASK, a.requestedFields)
     
   def testLoad_allRequestedFields(self):

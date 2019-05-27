@@ -379,6 +379,12 @@ static PpcRadarOptions_t* PpcOptionsInternal_createRadarOptionsFromNode(PpcOptio
       } else if (strcasecmp("attenuationPIAminZ", nodeName) == 0 &&
                  !PpcOptionsInternal_setDoubleFun(child, options, tagNames, nodeName, PpcRadarOptions_setAttenuationPIAminZ)) {
           RAVE_ERROR0("Failed to set attenuationPIAminZ in radar options");
+      } else if (strcasecmp("meltingLayerBottomHeight", nodeName) == 0 &&
+          !PpcOptionsInternal_setDoubleFun(child, options, tagNames, nodeName, PpcRadarOptions_setMeltingLayerBottomHeight)) {
+        RAVE_ERROR0("Failed to set meltingLayerBottomHeight in radar options");
+      } else if (strcasecmp("meltingLayerHourThreshold", nodeName) == 0 &&
+          !PpcOptionsInternal_setLongFun(child, options, tagNames, nodeName, PpcRadarOptions_setMeltingLayerHourThreshold)) {
+        RAVE_ERROR0("Failed to set meltingLayerHourThreshold in radar options");
       } else if (strcasecmp("requestedFields", nodeName) == 0 &&
                  !PpcOptionsInternal_setRequestedFields(child, options, tagNames, nodeName)) {
           RAVE_ERROR0("Failed to set requestedFields in radar options");
@@ -519,6 +525,12 @@ int PpcOptionsInternal_merge(PpcOptions_t* self, PpcRadarOptions_t* options, Ppc
     }
     if (!RaveObjectHashTable_exists(optionTagNames, "requestedFields")) {
       PpcRadarOptions_setRequestedFields(options, PpcRadarOptions_getRequestedFields(other));
+    }
+    if (!RaveObjectHashTable_exists(optionTagNames, "meltingLayerBottomHeight")) {
+      PpcRadarOptions_setMeltingLayerBottomHeight(options, PpcRadarOptions_getMeltingLayerBottomHeight(other));
+    }
+    if (!RaveObjectHashTable_exists(optionTagNames, "meltingLayerHourThreshold")) {
+      PpcRadarOptions_setMeltingLayerHourThreshold(options, PpcRadarOptions_getMeltingLayerHourThreshold(other));
     }
   }
   RAVE_OBJECT_RELEASE(optionTagNames);

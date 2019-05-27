@@ -116,7 +116,10 @@
     <attenuationGammaH				value="0.08" />
     <attenuationAlpha				value="0.2" />
     <attenuationPIAminZ				value="-30" />
-
+    
+	<meltingLayerBottomHeight		value="2.463" />
+	<meltingLayerHourThreshold		value="6" />
+	
 	<requestedFields				value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
   </radaroptions>
 </ppc-options>

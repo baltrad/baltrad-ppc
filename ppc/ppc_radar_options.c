@@ -80,7 +80,7 @@ struct _PpcRadarOptions_t {
   double attenuationPIAminZ; /**< min PIA Z value in attenuation process */
 
   double meltingLayerBottomHeight; /**< the default melting layer bottom height */
-
+  long meltingLayerHourThreshold; /**< number of hours before default height is used */
   int requestedFieldMask; /**< the fields that should be added to the result */
 };
 //                                          Weight | X2   |  X3  | Delta1  | Delta2
@@ -140,6 +140,7 @@ static int PpcRadarOptions_constructor(RaveCoreObject* obj)
   options->attenuationAlpha = 0.2;
   options->attenuationPIAminZ = -30;
   options->meltingLayerBottomHeight = 2.463;
+  options->meltingLayerHourThreshold = 6;
 
   options->requestedFieldMask = PpcRadarOptions_DBZH_CORR|PpcRadarOptions_ATT_DBZH_CORR|PpcRadarOptions_PHIDP_CORR|PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK;
 
@@ -203,6 +204,7 @@ static int PpcRadarOptions_copyconstructor(RaveCoreObject* obj, RaveCoreObject* 
   this->attenuationPIAminZ = src->attenuationPIAminZ;
 
   this->meltingLayerBottomHeight = src->meltingLayerBottomHeight;
+  this->meltingLayerHourThreshold = src->meltingLayerHourThreshold;
 
   this->requestedFieldMask = src->requestedFieldMask;
 
@@ -527,13 +529,28 @@ void PpcRadarOptions_setParametersCLUTTER_MAP(PpcRadarOptions_t* self, double we
 
 void PpcRadarOptions_setMeltingLayerBottomHeight(PpcRadarOptions_t* self, double height)
 {
+  RAVE_ASSERT((self != NULL), "self == NULL");
   self->meltingLayerBottomHeight = height;
 }
 
 double PpcRadarOptions_getMeltingLayerBottomHeight(PpcRadarOptions_t* self)
 {
+  RAVE_ASSERT((self != NULL), "self == NULL");
   return self->meltingLayerBottomHeight;
 }
+
+void PpcRadarOptions_setMeltingLayerHourThreshold(PpcRadarOptions_t* self, long hours)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  self->meltingLayerHourThreshold = hours;
+}
+
+long PpcRadarOptions_getMeltingLayerHourThreshold(PpcRadarOptions_t* self)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  return self->meltingLayerHourThreshold;
+}
+
 
 void PpcRadarOptions_setNodata(PpcRadarOptions_t* self, double nodata)
 {

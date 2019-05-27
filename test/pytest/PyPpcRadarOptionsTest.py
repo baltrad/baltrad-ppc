@@ -460,6 +460,15 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     self.assertAlmostEqual(2.463, a.meltingLayerBottomHeight, 3)
     a.meltingLayerBottomHeight = 1
     self.assertAlmostEqual(1.0, a.meltingLayerBottomHeight, 3);
+
+  def testMeltingLayerHourThreshold(self):
+    a = _ppcradaroptions.new()
+    
+    self.assertTrue("meltingLayerHourThreshold" in dir(a))
+    
+    self.assertEqual(6, a.meltingLayerHourThreshold)
+    a.meltingLayerHourThreshold = 1
+    self.assertEqual(1, a.meltingLayerHourThreshold);
     
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']
