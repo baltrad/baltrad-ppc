@@ -1,0 +1,34 @@
+/** \mainpage Baltrad Polarimetric Processing Chain (baltrad-ppc)
+\date 29 Nov 2019
+\author Anders Henja
+\par Copyright 
+&copy; 2019 by the Swedish Meteorological and Hydrological Institute
+(SMHI), Norrk&ouml;ping, Sweden
+
+\par Legals
+baltrad-ppc is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+\par
+baltrad-ppc is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+\par
+You should have received a copy of the GNU Lesser General Public License
+along with baltrad-ppc.  If not, see http://www.gnu.org/licenses/.
+By obtaining, using, and/or copying this software and/or its associated 
+documentation, you agree that you have read, understood, and will comply
+with the following terms and conditions:
+
+\section introduction Introduction
+The baltrad polarimetric processing chain quality algorithm is based on the work made by
+Gianfranco Vulpiani at SMHI in 2017. The original code was developed in matlab and has been
+ported to work as a part of RAVE.
+
+
+
+*/

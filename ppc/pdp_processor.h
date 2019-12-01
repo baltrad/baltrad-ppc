@@ -126,6 +126,7 @@ RaveData2D_t* PdpProcessor_clutterID(PdpProcessor_t* self, RaveData2D_t* Z, Rave
  * @param[in] textureZ - the Z texture
  * @param[in] clutterMap - the clutter map
  * @param[in] nodataZ - Z nodata value
+ * @param[in] nodataVRADH - VRADH nodata value
  * @param[in] qualityThreshold - quality threshold value
  * @param[out] outZ - the resulting Z field
  * @param[out] outQuality - the resulting quality field
