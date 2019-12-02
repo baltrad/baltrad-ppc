@@ -613,7 +613,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
 
   if (PpcRadarOptions_RHOHV_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
-    paramRHOHV = PdpProcessorInternal_createPolarScanParamFromData2D(outKDP, "RHOHV_CORR", 1, 255.0, 0.0);
+    paramRHOHV = PdpProcessorInternal_createPolarScanParamFromData2D(dataRHOHV, "RHOHV_CORR", 1, 255.0, 0.0);
     if (paramRHOHV == NULL ||
         !PolarScan_addParameter(tmpresult, paramRHOHV)) {
       RAVE_ERROR0("Failed to add corrected RHOHV field");
@@ -631,7 +631,16 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
 
   if (PpcRadarOptions_ZDR_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
-    correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "ZDR_CORR", 1, 255.0, 0.0);
+    correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(dataZDR, "ZDR_CORR", 1, 255.0, 0.0);
+    if (correctedZDR == NULL ||
+        !PolarScan_addParameter(tmpresult, correctedZDR)) {
+      RAVE_ERROR0("Failed to add corrected ZDR field");
+      goto done;
+    }
+  }
+
+  if (PpcRadarOptions_ATT_ZDR_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
+    correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZDR, "ATT_ZDR_CORR", 1, 255.0, 0.0);
     if (correctedZDR == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZDR)) {
       RAVE_ERROR0("Failed to add corrected ZDR field");
@@ -640,7 +649,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
 
   if (PpcRadarOptions_ZPHI_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
-    correctedZPHI = PdpProcessorInternal_createPolarScanParamFromData2D(outPDP, "ZPHI_CORR", 1, 255.0, 0.0);
+    correctedZPHI = PdpProcessorInternal_createPolarScanParamFromData2D(outZPHI, "ZPHI_CORR", 1, 255.0, 0.0);
     if (correctedZPHI == NULL ||
         !PolarScan_addParameter(tmpresult, correctedZPHI)) {
       RAVE_ERROR0("Failed to add corrected >ZPHI field");

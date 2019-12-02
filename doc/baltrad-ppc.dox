@@ -26,7 +26,7 @@ with the following terms and conditions:
 
 \section introduction Introduction
 The baltrad polarimetric processing chain quality algorithm is based on the work made by
-Gianfranco Vulpiani at SMHI in 2017. The original code was developed in matlab and has been
+Gianfranco Vulpiani at SMHI in 2017. The original code was developed in Matlab and has been
 ported to work as a part of RAVE.
 
 

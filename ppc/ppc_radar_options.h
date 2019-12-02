@@ -51,7 +51,7 @@ extern RaveCoreObjectType PpcRadarOptions_TYPE;
 #define PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK (1 << 9) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for residual clutter flag */
 #define PpcRadarOptions_QUALITY_ATTENUATION_MASK (1 << 10) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for attenuation mask */
 #define PpcRadarOptions_QUALITY_ATTENUATION (1 << 11) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for actual attenuation */
-
+#define PpcRadarOptions_ATT_ZDR_CORR   (1 << 12) /**< Used by @ref #PpcRadarOptions_setRequestedFields Add quality flag for actual attenuation */
 /**
  * Set the name of the owner of these options
  * @param[in] self - self

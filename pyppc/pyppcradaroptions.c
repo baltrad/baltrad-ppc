@@ -810,6 +810,7 @@ MOD_INIT(_ppcradaroptions)
   add_long_constant(dictionary, "Q_RESIDUAL_CLUTTER_MASK", PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK);
   add_long_constant(dictionary, "Q_ATTENUATION_MASK", PpcRadarOptions_QUALITY_ATTENUATION_MASK);
   add_long_constant(dictionary, "Q_ATTENUATION", PpcRadarOptions_QUALITY_ATTENUATION);
+  add_long_constant(dictionary, "P_ATT_ZDR_CORR", PpcRadarOptions_ATT_ZDR_CORR);
 
   PYRAVE_DEBUG_INITIALIZE;
   return MOD_INIT_SUCCESS(module);
