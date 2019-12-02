@@ -301,7 +301,6 @@ static long long PdpProcessorInternal_timestamp(void) {
 //  RAVE_ASSERT((self != NULL), "self == NULL");
 //  PpcRadarOptions_setRequestedFields(self->options, fieldmask);
 //  //self->requestedFieldMask = fieldmask;
-//}
 //
 //int PdpProcessor_getRequestedFields(PdpProcessor_t* self)
 //{
@@ -1336,14 +1335,11 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
       }
       RaveData2D_getValueUnchecked(pdpres, axi, y, &Ax);
       RaveData2D_getValueUnchecked(pdpres, bxi, y, &Bx);
-      Kdpv = 0.5 * (Bx - Ax) / 2 * dr * window;
+      Kdpv = 0.5 * (Bx - Ax) / (2 * dr * window);
       if (Kdpv < kdpDown || Kdpv > kdpUp) {
         Kdpv = 0.0;
       }
       if (x < window || x >= xsize - window ) { /* Side effects compensation */
-        Kdpv = 0.0;
-      }
-      if (Kdpv > kdpStdThreshold) {
         Kdpv = 0.0;
       }
       RaveData2D_setValueUnchecked(kdpres, x, y, Kdpv);
@@ -1406,16 +1402,16 @@ int PdpProcessor_pdpProcessing(PdpProcessor_t* self, RaveData2D_t* pdp, double d
 
         RaveData2D_getValueUnchecked(pdpres, axi, y, &Ax);
         RaveData2D_getValueUnchecked(pdpres, bxi, y, &Bx);
-        Kdpv = 0.5 * (Bx - Ax) / 2 * dr * window;
+        Kdpv = 0.5 * (Bx - Ax) / (2 * dr * window);
         if (Kdpv < kdpDown || Kdpv > kdpUp) {
           Kdpv = 0.0;
         }
         if (x < window || x >= xsize - window ) { /* Side effects compensation */
           Kdpv = 0.0;
         }
-        if (Kdpv > kdpStdThreshold) {
-          Kdpv = 0.0;
-        }
+//        if (Kdpv > kdpStdThreshold) {
+//          Kdpv = 0.0;
+//        }
         RaveData2D_setValueUnchecked(kdpres, x, y, Kdpv);
       }
     }

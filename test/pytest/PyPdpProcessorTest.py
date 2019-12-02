@@ -514,7 +514,10 @@ class PyPdpProcessorTest(unittest.TestCase):
     self.assertFalse(result.hasParameter("TH_CORR"))
     self.assertTrue(result.hasParameter("KDP_CORR"))
     self.assertTrue(result.hasParameter("ZPHI_CORR"))
-
+    b = _raveio.new()
+    b.object = result
+    b.save("kdpresult.h5")
+    
   def test_process_CORR_TH_CORR_ZPHI(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
