@@ -427,7 +427,7 @@ class PyPdpProcessorTest(unittest.TestCase):
     dbzh.nodata = -999
     dbzh.useNodata = True
     
-    zres, zdrres, piares, dbzhres = processor.attenuation(z, zdr, dbzh, pdp, mask, 1.0, 2.0)
+    zres, zdrres, piares, dbzhres = processor.attenuation(z, zdr, dbzh, pdp, mask, 1.0, 2.0, -1.0, -1.0)
     #print(str(zres.getData()))
     #print(str(zdrres.getData()))
     #print(str(piares.getData()))
@@ -514,18 +514,35 @@ class PyPdpProcessorTest(unittest.TestCase):
     self.assertFalse(result.hasParameter("TH_CORR"))
     self.assertTrue(result.hasParameter("KDP_CORR"))
     self.assertTrue(result.hasParameter("ZPHI_CORR"))
-    b = _raveio.new()
-    b.object = result
-    b.save("kdpresult.h5")
+    # b = _raveio.new()
+    #b.object = result
+    #b.save("kdpresult.h5")
     
   def test_process_CORR_TH_CORR_ZPHI(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
-    processor.options.requestedFields = _ppcradaroptions.P_TH_CORR | _ppcradaroptions.P_ZPHI_CORR  
+    processor.options.requestedFields = _ppcradaroptions.P_TH_CORR | _ppcradaroptions.P_ZPHI_CORR
     result = processor.process(a.object.getScan(0))
     self.assertTrue(result.hasParameter("TH_CORR"))
     self.assertFalse(result.hasParameter("KDP_CORR"))
     self.assertTrue(result.hasParameter("ZPHI_CORR"))
+    #b = _raveio.new()
+    #b.object = result
+    #b.save("thresult.h5")
+
+  def Xtest_odd_th(self):
+    a=_raveio.open("sehem_pvol_pn215_20191128T000000Z_0x73fc7b.h5")
+    processor = _pdpprocessor.new()
+    processor.options.requestedFields = _ppcradaroptions.P_TH_CORR | _ppcradaroptions.P_ZPHI_CORR | _ppcradaroptions.P_ATT_TH_CORR | _ppcradaroptions.P_ATT_DBZH_CORR  | _ppcradaroptions.P_KDP_CORR
+    processor.options.meltingLayerBottomHeight = 1.0
+    #processor.options.preprocessZThreshold=-10.0
+    result = processor.process(a.object.getScan(0))
+    #self.assertTrue(result.hasParameter("TH_CORR"))
+    #self.assertFalse(result.hasParameter("KDP_CORR"))
+    #self.assertTrue(result.hasParameter("ZPHI_CORR"))
+    b = _raveio.new()
+    b.object = result
+    b.save("thresult.h5")
     
     
 if __name__ == "__main__":

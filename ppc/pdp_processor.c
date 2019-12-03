@@ -379,6 +379,12 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
+//  fprintf(stderr, "DBZH: nodata=%f, undetect=%f, gain=%f, offset=%f\n",
+//		  PolarScanParam_getNodata(DBZH),
+//		  PolarScanParam_getUndetect(DBZH),
+//		  PolarScanParam_getGain(DBZH),
+//		  PolarScanParam_getOffset(DBZH));
+
   dataTH = PdpProcessorInternal_getData2DFromParam(TH, nodata);
   dataZDR = PdpProcessorInternal_getData2DFromParam(ZDR, nodata);
   dataDV = PdpProcessorInternal_getData2DFromParam(DV, nodata);
@@ -540,7 +546,10 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
   if (!PdpProcessor_attenuation(self, dataTH, dataZDR, dataDBZH, outPDP, attenuationMask,
       PpcRadarOptions_getAttenuationGammaH(self->options),
-      PpcRadarOptions_getAttenuationAlpha(self->options), &outAttenuationZ, &outAttenuationZDR, &outAttenuationPIA, &outAttenuationDBZH)) {
+      PpcRadarOptions_getAttenuationAlpha(self->options),
+	  PolarScanParam_getUndetect(TH)*PolarScanParam_getGain(TH) + PolarScanParam_getOffset(TH),
+	  PolarScanParam_getUndetect(DBZH)*PolarScanParam_getGain(DBZH) + PolarScanParam_getOffset(DBZH),
+	  &outAttenuationZ, &outAttenuationZDR, &outAttenuationPIA, &outAttenuationDBZH)) {
     goto done;
   }
   // fprintf(stderr, "attenuation ran after %ld ms\n", PdpProcessorInternal_timestamp() - starttime);
@@ -1538,13 +1547,14 @@ done:
 }
 
 int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t* zdr, RaveData2D_t* dbzh, RaveData2D_t* pdp,
-    RaveData2D_t* mask, double gamma_h, double alpha, RaveData2D_t** outz, RaveData2D_t** outzdr, RaveData2D_t** outPIA, RaveData2D_t** outDBZH)
+    RaveData2D_t* mask, double gamma_h, double alpha, double zundetect, double dbzhundetect, RaveData2D_t** outz, RaveData2D_t** outzdr, RaveData2D_t** outPIA, RaveData2D_t** outDBZH)
 {
   long nrays = 0;
   long nbins = 0;
   int result = 0;
   long ri = 0, bi = 0;
   double vpianodata = 0.0;
+  double znodata = 0.0;
   double dbzhnodata = 0.0;
   RaveData2D_t *PIA = NULL, *PIDA = NULL;
   RaveData2D_t *zdrres = NULL, *zres = NULL, *dbzhres = NULL;
@@ -1582,6 +1592,7 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
     goto done;
   }
   vpianodata = RaveData2D_getNodata(pdp);
+  znodata = RaveData2D_getNodata(Z);
   RaveData2D_setNodata(PIA, vpianodata);
   RaveData2D_useNodata(PIA, 1);
 
@@ -1637,12 +1648,15 @@ int PdpProcessor_attenuation(PdpProcessor_t* self, RaveData2D_t* Z, RaveData2D_t
       RaveData2D_getValueUnchecked(PIA, bi, ri, &vpia);
       RaveData2D_getValueUnchecked(zdr, bi, ri, &vzdr);
       RaveData2D_getValueUnchecked(PIDA, bi, ri, &vpida);
-      if (vpia != vpianodata && vpia >= 0.0) {
+      //if (znodata != vz && vz < 0.0) {
+      //  fprintf(stderr, "ri=%d, bi=%d, nodata=%f, vz = %f, undetect=%f\n", ri, bi, znodata, vz, zundetect);
+      //}
+      if (vpia != vpianodata && vpia >= 0.0 && znodata != vz && vz != zundetect) {
         RaveData2D_setValueUnchecked(zres, bi, ri, vz + vpia);
         RaveData2D_setValueUnchecked(zdrres, bi, ri, vzdr + vpida);
       }
 
-      if (vpia != vpianodata && vpia >= 0.0 && dbzhnodata != vdbzh && vdbzh > 0.0) { /* Adding attenuation to DBZH */
+      if (vpia != vpianodata && vpia >= 0.0 && dbzhnodata != vdbzh && vdbzh != dbzhundetect) { /* Adding attenuation to DBZH */
         RaveData2D_setValueUnchecked(dbzhres, bi, ri, vdbzh + vpia);
       }
 

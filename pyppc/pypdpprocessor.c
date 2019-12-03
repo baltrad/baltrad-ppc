@@ -422,8 +422,9 @@ static PyObject* _pypdpprocessor_attenuation(PyPdpProcessor* self, PyObject* arg
   PyObject *pyoutz = NULL, *pyoutzdr = NULL, *pyoutpia = NULL, *pyoutdbzh = NULL;;
   PyObject* result = NULL;
   double gamma_h = 0.0, alpha = 0.0;
+  double zundetect = -32.0, dbzhundetect = -32.0;
 
-  if (!PyArg_ParseTuple(args, "OOOOOdd", &pyinz, &pyinzdr, &pyindbzh, &pyinpdp, &pyinmask, &gamma_h, &alpha))
+  if (!PyArg_ParseTuple(args, "OOOOOdddd", &pyinz, &pyinzdr, &pyindbzh, &pyinpdp, &pyinmask, &gamma_h, &alpha, &zundetect, &dbzhundetect))
     return NULL;
 
   if (!PyRaveData2D_Check(pyinz) || !PyRaveData2D_Check(pyinzdr) || !PyRaveData2D_Check(pyindbzh) || !PyRaveData2D_Check(pyinpdp) || !PyRaveData2D_Check(pyinmask)) {
@@ -435,7 +436,7 @@ static PyObject* _pypdpprocessor_attenuation(PyPdpProcessor* self, PyObject* arg
   }
 
   if (!PdpProcessor_attenuation(self->processor, ((PyRaveData2D*)pyinz)->field, ((PyRaveData2D*)pyinzdr)->field,
-      ((PyRaveData2D*)pyindbzh)->field, ((PyRaveData2D*)pyinpdp)->field, ((PyRaveData2D*)pyinmask)->field, gamma_h, alpha,
+      ((PyRaveData2D*)pyindbzh)->field, ((PyRaveData2D*)pyinpdp)->field, ((PyRaveData2D*)pyinmask)->field, gamma_h, alpha, zundetect, dbzhundetect,
       &outz, &outzdr, &outpia, &outdbzh)) {
     raiseException_returnNULL(PyExc_RuntimeError, "Failed to run pdp processing");
   }
