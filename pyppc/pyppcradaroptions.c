@@ -51,6 +51,12 @@ PYRAVE_DEBUG_MODULE("_ppcradaroptions");
 {PyErr_SetString(type, msg); return NULL;}
 
 /**
+ * Sets python exception and returns specified value
+ */
+#define raiseException_returnValue(val, type, msg) \
+{PyErr_SetString(type, msg); return val;}
+
+/**
  * Error object for reporting errors to the python interpreeter
  */
 static PyObject *ErrorObject;
@@ -165,6 +171,13 @@ static PyObject* _pyppcradaroptions_setBand(PyPpcRadarOptions* self, PyObject* a
   Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(_pyppcro_setBand_doc,
+    "Sets kdpUp, kdpDown and kdpStdThreshold based on what band.\n"
+    "  band = 's' => kdpUp = 14, kdpDown = -2, kdpStdThreshold = 5\n"
+    "  band = 'c' => kdpUp = 20, kdpDown = -2, kdpStdThreshold = 5\n"
+    "  band = 'x' => kdpUp = 40, kdpDown = -2, kdpStdThreshold = 5\n"
+    );
+
 /**
  * All methods a ppc radar options can have
  */
@@ -210,8 +223,7 @@ static struct PyMethodDef _pyppcradaroptions_methods[] =
   {"processingTextureThreshold", NULL},
   {"meltingLayerBottomHeight", NULL},
   {"meltingLayerHourThreshold", NULL},
-  {"setBand", (PyCFunction)_pyppcradaroptions_setBand, 1},
-
+  {"setBand", (PyCFunction)_pyppcradaroptions_setBand, METH_VARARGS, _pyppcro_setBand_doc},
   {NULL, NULL} /* sentinel */
 };
 
@@ -221,9 +233,15 @@ static struct PyMethodDef _pyppcradaroptions_methods[] =
 static PyObject* _pyppcradaroptions_getattro(PyPpcRadarOptions* self, PyObject* name)
 {
   if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "name") == 0) {
+    if (PpcRadarOptions_getName(self->options) == NULL) {
+      Py_RETURN_NONE;
+    }
     return PyString_FromString(PpcRadarOptions_getName(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "defaultName") == 0) {
-      return PyString_FromString(PpcRadarOptions_getDefaultName(self->options));
+    if (PpcRadarOptions_getDefaultName(self->options) == NULL) {
+      Py_RETURN_NONE;
+    }
+    return PyString_FromString(PpcRadarOptions_getDefaultName(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "minWindow") == 0) {
     return PyInt_FromLong(PpcRadarOptions_getMinWindow(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "parametersUZ") == 0) {
@@ -700,6 +718,74 @@ done:
 /// Type definitions
 /// --------------------------------------------------------------------
 /*@{ Type definitions */
+
+PyDoc_STRVAR(_pyppcro_object_definition_doc,
+    "Keeps track of options used for the different radar sources when it comes to the polarimetric process chain\n"
+    "processing.\n"
+    "\n"
+    "The following settings are available:\n"
+    "parametersUZ                 - parameters for TH, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2\n"
+    "                               and the derived values will be X1=X2-Delta1, X3=X4-Delta2\n"
+    "parametersVEL                - parameters for VRADH, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2\n"
+    "                               and the derived values will be X1=X2-Delta1, X3=X4-Delta2\n"
+    "parametersTextPHIDP          - parameters for the PHIDP texture, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2\n"
+    "                               and the derived values will be X1=X2-Delta1, X3=X4-Delta2\n"
+    "parametersRHV                - parameters for RHOHV, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2\n"
+    "                               and the derived values will be X1=X2-Delta1, X3=X4-Delta2\n"
+    "parametersTextUZ             - parameters for the TH texture, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2\n"
+    "                               and the derived values will be X1=X2-Delta1, X3=X4-Delta2\n"
+    "parametersClutterMap         - parameters for the clutter map, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2\n"
+    "                               and the derived values will be X1=X2-Delta1, X3=X4-Delta2\n"
+    "nodata                       - nodata to used in most products\n"
+    "minDBZ                       - min DBZ threshold in the clutter correction\n"
+    "qualityThreshold             - quality threshold in the clutter correction\n"
+    "preprocessZThreshold         - preprocessing Z threshold before starting actual processing\n"
+    "residualMinZClutterThreshold - min z clutter threshold during residual clutter filtering\n"
+    "residualThresholdZ           - min Z threshold in the residual clutter filtering\n"
+    "residualThresholdTexture     - texture threshold in the residual clutter filtering\n"
+    "residualClutterNodata        - the nodata value to be used when creating the residual clutter image used for creating the mask\n"
+    "residualClutterMaskNodata    - Nodata value for the residual clutter mask\n"
+    "residualClutterTextureFilteringMaxZ - Max Z value when creating the residual clutter mask, anything higher will be set to min value\n"
+    "residualFilterBinSize        - number of bins used in the window when creating the residual mask\n"
+    "residualFilterRaySize        - number of rays used in the window when creating the residual mask\n"
+    "minZMedfilterThreshold       - min z threshold used in the median filter that is used by the residual clutter filter\n"
+    "processingTextureThreshold   - threshold for the texture created in the pdp processing\n"
+    "minWindow                    - min window size\n"
+    "pdpRWin1                     - pdp ray window 1\n"
+    "pdpRWin2                     - pdp ray window 2\n"
+    "pdpNrIterations              - number of iterations in pdp processing\n"
+    "kdpUp                        - Maximum allowed value of Kdp\n"
+    "kdpDown                      - Minimum allowed value of kdp\n"
+    "kdpStdThreshold              - Kdp STD threshold\n"
+    "BB                           - BB value used in the zphi part of the pdp processing\n"
+    "thresholdPhidp               - threshold for PHIDP in the pdp processing\n"
+    "minAttenuationMaskRHOHV      - min RHOHV value for marking value as 1 in the attenuation mask\n"
+    "minAttenuationMaskKDP        - min KDP value for marking value as 1 in the attenuation mask\n"
+    "minAttenuationMaskTH         - min TH value for marking value as 1 in the attenuation mask\n"
+    "attenuationGammaH            - gamma h value used in the attenuation\n"
+    "attenuationAlpha             - alpha value used in the attenuation\n"
+    "attenuationPIAminZ           - min PIA Z value in attenuation process\n"
+    "requestedFieldMask           - '|' separated list of flags that defines what products should be added to the finished result.\n"
+    "                               If the flag begins with a P, it means that the result is added as a parameter and the name of\n"
+    "                               the parameter will be without the P_. If on the other hand the flag begins with a Q_ it means\n"
+    "                               that the result is added as a quality field and in those cases the name will be\n"
+    "                               se.baltrad.ppc.<mask name without Q_ in lowercase>\n"
+    "                               Available flags are:\n"
+    "                                + P_TH_CORR\n"
+    "                                + P_ATT_TH_CORR\n"
+    "                                + P_DBZH_CORR\n"
+    "                                + P_ATT_DBZH_CORR\n"
+    "                                + P_KDP_CORR\n"
+    "                                + P_RHOHV_CORR\n"
+    "                                + P_PHIDP_CORR\n"
+    "                                + P_ZDR_CORR\n"
+    "                                + P_ZPHI_CORR\n"
+    "                                + Q_RESIDUAL_CLUTTER_MASK\n"
+    "                                + Q_ATTENUATION_MASK\n"
+    "                                + Q_ATTENUATION\n"
+    );
+
+
 PyTypeObject PyPpcRadarOptions_Type =
 {
   PyVarObject_HEAD_INIT(NULL, 0) /*ob_size*/
@@ -723,14 +809,14 @@ PyTypeObject PyPpcRadarOptions_Type =
   (setattrofunc)_pyppcradaroptions_setattro, /*tp_setattro*/
   0,                            /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT, /*tp_flags*/
-  0,                            /*tp_doc*/
+  _pyppcro_object_definition_doc, /*tp_doc*/
   (traverseproc)0,              /*tp_traverse*/
   (inquiry)0,                   /*tp_clear*/
   0,                            /*tp_richcompare*/
   0,                            /*tp_weaklistoffset*/
   0,                            /*tp_iter*/
   0,                            /*tp_iternext*/
-  _pyppcradaroptions_methods,              /*tp_methods*/
+  _pyppcradaroptions_methods,   /*tp_methods*/
   0,                            /*tp_members*/
   0,                            /*tp_getset*/
   0,                            /*tp_base*/
@@ -778,7 +864,7 @@ MOD_INIT(_ppcradaroptions)
 
   MOD_INIT_VERIFY_TYPE_READY(&PyPpcRadarOptions_Type);
 
-  MOD_INIT_DEF(module, "_ppcradaroptions", NULL/*doc*/, functions);
+  MOD_INIT_DEF(module, "_ppcradaroptions", _pyppcro_object_definition_doc/*doc*/, functions);
   if (module == NULL) {
     return MOD_INIT_ERROR;
   }

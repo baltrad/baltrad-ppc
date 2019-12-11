@@ -22,7 +22,7 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     a = _ppcradaroptions.new()
     self.assertNotEqual(-1, str(type(a)).find("PpcRadarOptions"))
 
-  def testMinWindow(self):
+  def XtestMinWindow(self):
     a = _ppcradaroptions.new()
     
     self.assertTrue("minWindow" in dir(a))
@@ -32,6 +32,22 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     a.minWindow = 1
     
     self.assertEqual(1, a.minWindow)
+  
+  def testName(self):
+    a = _ppcradaroptions.new()
+    self.assertEqual(None, a.name)
+    a.name = "nisse"
+    self.assertEqual("nisse", a.name)
+    a.name=None
+    self.assertEqual(None, a.name)
+
+  def testDefaultName(self):
+    a = _ppcradaroptions.new()
+    self.assertEqual(None, a.defaultName)
+    a.defaultName = "nisse"
+    self.assertEqual("nisse", a.defaultName)
+    a.defaultName=None
+    self.assertEqual(None, a.defaultName)
   
   def testPdpRWin1(self):
     a = _ppcradaroptions.new()
@@ -469,7 +485,7 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     self.assertEqual(6, a.meltingLayerHourThreshold)
     a.meltingLayerHourThreshold = 1
     self.assertEqual(1, a.meltingLayerHourThreshold);
-    
+
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']
   unittest.main()

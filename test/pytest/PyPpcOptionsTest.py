@@ -20,10 +20,6 @@ class PyPpcOptionsTest(unittest.TestCase):
   def tearDown(self):
     pass
 
-  def testNew(self):
-    a = _ppcoptions.new()
-    self.assertNotEqual(-1, str(type(a)).find("PpcOptions"))
-    
   def testLoad(self):
     a = _ppcoptions.load(self.FIXTURE_1).getRadarOptions("default")
     self.assertEqual("default", a.name)
@@ -355,7 +351,15 @@ class PyPpcOptionsTest(unittest.TestCase):
     self.assertEqual(True, a.exists("all_requested_fields"))
     self.assertEqual(False, a.exists("nisse"))
     self.assertEqual(False, a.exists("nosuch_default"))
-    
+  
+  def testList(self):
+    a = _ppcoptions.load(self.FIXTURE_1)
+    result = a.options().keys()
+    self.assertTrue("default" in result)
+    self.assertTrue("uses_standard" in result)
+    self.assertTrue("modified_default" in result)
+    self.assertTrue("overrided_default" in result)
+    self.assertTrue("all_requested_fields" in result)
     
 
 if __name__ == "__main__":

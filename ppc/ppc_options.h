@@ -26,6 +26,7 @@ along with baltrad-ppc.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef PPC_OPTIONS_H
 #define PPC_OPTIONS_H
 #include "ppc_radar_options.h"
+#include <raveobject_hashtable.h>
 
 /**
  * Defines a transformer
@@ -60,5 +61,12 @@ PpcRadarOptions_t* PpcOptions_getRadarOptions(PpcOptions_t* self, const char* na
  * @return 1 on success otherwise 0
  */
 int PpcOptions_addRadarOptions(PpcOptions_t* self, PpcRadarOptions_t* options);
+
+/**
+ * Returns a list of options in the repository
+ * @param[in] self - self
+ * @returns a hashtable with the options. Note, this is cloned and not internal.
+ */
+RaveObjectHashTable_t* PpcOptions_options(PpcOptions_t* self);
 
 #endif /* PPC_OPTIONS_H_ */

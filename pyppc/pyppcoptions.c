@@ -137,6 +137,7 @@ static void _pyppcoptions_dealloc(PyPpcOptions* obj)
  * @param[in] args arguments for creation
  * @return the object on success, otherwise NULL
  */
+/*
 static PyObject* _pyppcoptions_new(PyObject* self, PyObject* args)
 {
   //PyObject* inptr = NULL;
@@ -146,7 +147,7 @@ static PyObject* _pyppcoptions_new(PyObject* self, PyObject* args)
   }
   return (PyObject*)PyPpcOptions_New(NULL);
 }
-
+*/
 static PyObject* _pyppcoptions_load(PyObject* self, PyObject* args)
 {
   char* filename = NULL;
@@ -193,6 +194,57 @@ static PyObject* _pyppcoptions_exists(PyPpcOptions* self, PyObject* args)
   return PyBool_FromLong(PpcOptions_exists(self->options, radarname));
 }
 
+static PyObject* _pyppcoptions_options(PyPpcOptions* self, PyObject* args)
+{
+  RaveObjectHashTable_t* options = NULL;
+  RaveList_t* keys = NULL;
+
+  PyObject *dictionary = NULL, *result = NULL;
+  if (!PyArg_ParseTuple(args, ""))
+    return NULL;
+
+  options = PpcOptions_options(self->options);
+  if (options != NULL) {
+    keys = RaveObjectHashTable_keys(options);
+    if (keys != NULL) {
+      dictionary = PyDict_New();
+      if (dictionary != NULL) {
+        int i = 0, n = 0;
+        n = RaveList_size(keys);
+        for (i = 0; i < n; i++) {
+          const char* optionname = (const char*)RaveList_get(keys, i);
+          if (optionname != NULL) {
+            PpcRadarOptions_t* opts = (PpcRadarOptions_t*)RaveObjectHashTable_get(options, optionname);
+            if (opts != NULL) {
+              PyObject* tmp = (PyObject*)PyPpcRadarOptions_New(opts);
+              PyDict_SetItemString(dictionary, optionname, tmp);
+              Py_XDECREF(tmp);
+              RAVE_OBJECT_RELEASE(opts);
+            } else {
+              char msg[256];
+              sprintf(msg, "Could not find option name=%s in options", optionname);
+              raiseException_gotoTag(done, PyExc_RuntimeError, msg)
+            }
+          } else {
+            raiseException_gotoTag(done, PyExc_RuntimeError, "Option name was NULL, not possible");
+          }
+        }
+      }
+    } else {
+      raiseException_gotoTag(done, PyExc_RuntimeError, "Could not get keys");
+    }
+  } else {
+    raiseException_gotoTag(done, PyExc_RuntimeError, "Could not get options");
+  }
+
+  result = dictionary;
+  dictionary = NULL;
+done:
+  RaveList_freeAndDestroy(&keys);
+  RAVE_OBJECT_RELEASE(options);
+  Py_XDECREF(dictionary);
+  return result;
+}
 
 /**
  * All methods a ppc  options can have
@@ -201,6 +253,7 @@ static struct PyMethodDef _pyppcoptions_methods[] =
 {
   {"getRadarOptions", (PyCFunction)_pyppcoptions_getRadarOptions, 1},
   {"exists", (PyCFunction)_pyppcoptions_exists, 1},
+  {"options", (PyCFunction)_pyppcoptions_options, 1},
   {NULL, NULL} /* sentinel */
 };
 
@@ -279,9 +332,39 @@ PyTypeObject PyPpcOptions_Type =
 };
 /*@} End of Type definitions */
 
+/*@{ Documentation about the module */
+PyDoc_STRVAR(_pyppcoptions_doc,
+    "This is the ppc options loader. It is used to load ppc radar option configuration files written in xml-format.\n"
+    "There are only a few member functions available here and currently there is no support for saving the configuration.\n"
+    "\n"
+    " The available functions are: \n"
+    "   - radaroptions := getRadarOptions(string)\n"
+    "     returns a PpcRadarOptionsCore instance if found\n"
+    "   - boolean := exists(string)\n"
+    "     returns if the specified option name exists or not\n"
+    "   - dictionary := options()\n"
+    "     returns a dictionary with all available option settings\n"
+    "\n"
+    ">>> import _ppcoptions\n"
+    ">>> options = _ppcoptions.load(\".../ppc_options.xml\")\n"
+    ">>> optionNames = options.options().keys()\n"
+    ">>> print(optionNames)\n"
+    "dict_keys(['default'])\n"
+    "\n"
+    "Assuming that we are loading a polar scan from sehud and want to use the options configured for that site\n"
+    "one could implement the usage as follows:\n"
+    "\n"
+    ">>> sehudopt = options.getRadarOptions(\"default\")\n"
+    ">>> if options.exists(\"sehud\"):\n"
+    ">>>   sehudopt = options.getRadarOptions(\"sehud\")\n"
+    "....\n"
+    );
+/*@} End of Documentation about the module */
+
+
 /*@{ Module setup */
 static PyMethodDef functions[] = {
-  {"new", (PyCFunction)_pyppcoptions_new, 1},
+  /*{"new", (PyCFunction)_pyppcoptions_new, 1},*/
   {"load", (PyCFunction)_pyppcoptions_load, 1},
   {NULL,NULL} /*Sentinel*/
 };
@@ -312,7 +395,7 @@ MOD_INIT(_ppcoptions)
 
   MOD_INIT_VERIFY_TYPE_READY(&PyPpcOptions_Type);
 
-  MOD_INIT_DEF(module, "_ppcoptions", NULL/*doc*/, functions);
+  MOD_INIT_DEF(module, "_ppcoptions", _pyppcoptions_doc/*doc*/, functions);
   if (module == NULL) {
     return MOD_INIT_ERROR;
   }

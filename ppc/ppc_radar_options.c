@@ -248,6 +248,7 @@ int PpcRadarOptions_setName(PpcRadarOptions_t* self, const char* name)
   }
   RAVE_FREE(self->name);
   self->name = tmp;
+  result = 1;
 done:
   return result;
 }
