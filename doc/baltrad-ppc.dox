@@ -342,9 +342,82 @@ a.save("/etc/baltrad/rave/etc/rave_pgf_quality_registry.xml")
 
 <center> \b Figure \b 2: Example registration </center>
 
-Next step is to configure the various settings for respective radar. This is done in the file <b>/etc/baltrad/baltrad-ppc/config/ppc_options.xml</b> In ppc_options.xml you will
-find a brief explanation of the different parameters that are configurable and also how you can reuse configuration for different radar sources.
+\section rave_pgf_ppc_options_xml ppc_options.xml
+Next step is to configure the various settings for respective radar. This is done in the file <b>/etc/baltrad/baltrad-ppc/config/ppc_options.xml</b>.
+In ppc_options.xml you will find a brief explanation of the different parameters that are configurable and also how you can reuse configuration for different radar sources.
 
+The information described in the xml file will be roughly the same as explained when printing the doc for _ppcradaroptions. Some things to note though is that it is possible
+to build hierarchies of the properties. This means that you can differentiate configurations depending on the situation. 
+As an example, let us say that seang & sekkr should use default values except for attenuationAlpha. selul should use same same as sekkr but it also needs to modify attenuationGammaH
+to 0.09.
+
+\verbatim
+<?xml version='1.0' encoding='UTF-8'?>
+<ppc-options>
+  <radaroptions name="default">
+    <!-- Weight | X2   |  X3  | Delta1  | Delta2   X1=X2-Delta1, X3=X4-Delta2-->
+    <parametersUZ                         value="0.00,30.00,90.00,62.00,20.00" />
+    <parametersVEL                        value="0.30,-0.90,0.90,0.15,0.15" />
+    <parametersTextPHIDP                  value="0.80,15.00,40.00,5.00,40.00" />
+    <parametersRHV                        value="0.20,0.00,0.60,0.00,0.10" />
+    <parametersTextUZ                     value="0.30,20.00,60.00,5.00,10.00" />
+    <parametersClutterMap                 value="0.90,5.00,70.00,20.00,60.00" />
+    
+    <minWindow                            value="11" />
+    <nodata                               value="-999.0" />
+    <minDBZ                               value="-32.0" />
+    <qualityThreshold                     value="0.75" />
+    <preprocessZThreshold                 value="-20.0" />
+    
+    <residualMinZClutterThreshold         value="-31.5" />
+    <residualThresholdZ                   value="-20.0" />
+    <residualThresholdTexture             value="20.0" />
+    <residualClutterNodata                value="-999.0" />
+    <residualClutterMaskNodata            value="-1.0" />
+    <residualClutterTextureFilteringMaxZ  value="70.0" />
+    <residualClutterNodata                value="-31.5" />
+    <residualFilterBinSize                value="1" />
+    <residualFilterRaySize                value="1" />
+    
+    <minZMedfilterThreshold               value="-30.0" />
+    <processingTextureThreshold           value="10.0" />
+    <pdpRWin1                             value="3.5" />
+    <pdpRWin2                             value="1.5" />
+    <pdpNrIterations                      value="2" />
+    <kdpUp                                value="20.0" />
+    <kdpDown                              value="-2.0" />
+    <kdpStdThreshold                      value="5.0" />
+    <BB                                   value="0.7987" />
+    <thresholdPhidp                       value="40.0" />
+
+    <minAttenuationMaskRHOHV              value="0.8" />
+    <minAttenuationMaskKDP                value="0.001" />
+    <minAttenuationMaskTH                 value="-20.0" />
+    <attenuationGammaH                    value="0.08" />
+    <attenuationAlpha                     value="0.2" />
+    <attenuationPIAminZ                   value="-30" />
+    
+    <meltingLayerBottomHeight             value="2.463" />
+    <meltingLayerHourThreshold            value="6" />
+	
+    <requestedFields                      value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
+  </radaroptions>
+  
+  <radaroptions name="attenuationAlpha03" default="default" > <!-- Uses default above but with some modified values-->
+    <attenuationAlpha                     value="0.3" />
+  </radaroptions>
+
+  <radaroptions name="seang" default="attenuationAlpha03" > <!-- Attenuation alpha 0.3 --> 
+  </radaroptions>
+
+  <radaroptions name="sekkr" default="attenuationAlpha03" >  <!-- Attenuation alpha 0.3 -->
+  </radaroptions>
+
+  <radaroptions name="selul" default="sekkr" >  <!-- Attenuation alpha 0.3 & attenuationGammaH 0.09 -->
+    <attenuationGammaH                    value="0.09" /> 
+  </radaroptions>
+ </ppc-options>
+\endverbatim
 
 
 

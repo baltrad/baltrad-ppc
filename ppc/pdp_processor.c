@@ -343,7 +343,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   RaveData2D_t *outAttenuationZ = NULL, *outAttenuationZDR = NULL, *outAttenuationPIA = NULL, *outAttenuationDBZH = NULL;
   RaveData2D_t *outZPHI = NULL, *outAH = NULL;
   RaveField_t* pdpQualityField = NULL;
-  PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *correctedDBZH = NULL, *attenuatedDBZH = NULL;
+  PolarScanParam_t *correctedZ = NULL, *correctedZDR = NULL, *attCorrectedZDR = NULL, *correctedZPHI = NULL, *attenuatedZ = NULL, *correctedDBZH = NULL, *attenuatedDBZH = NULL;
   PolarScanParam_t *paramKDP = NULL, *paramRHOHV = NULL, *correctedPDP = NULL;
   PolarNavigator_t* navigator = NULL;
   PolarScanParam_t *TH = NULL, *ZDR = NULL, *DV = NULL, *PHIDP = NULL, *RHOHV = NULL, *DBZH = NULL;
@@ -648,9 +648,9 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
   }
 
   if (PpcRadarOptions_ATT_ZDR_CORR & PpcRadarOptions_getRequestedFields(self->options)) {
-    correctedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZDR, "ATT_ZDR_CORR", 1, 255.0, 0.0);
-    if (correctedZDR == NULL ||
-        !PolarScan_addParameter(tmpresult, correctedZDR)) {
+    attCorrectedZDR = PdpProcessorInternal_createPolarScanParamFromData2D(outAttenuationZDR, "ATT_ZDR_CORR", 1, 255.0, 0.0);
+    if (attCorrectedZDR == NULL ||
+        !PolarScan_addParameter(tmpresult, attCorrectedZDR)) {
       RAVE_ERROR0("Failed to add corrected ZDR field");
       goto done;
     }
@@ -714,6 +714,7 @@ done:
   RAVE_OBJECT_RELEASE(pdpQualityField);
   RAVE_OBJECT_RELEASE(correctedZ);
   RAVE_OBJECT_RELEASE(correctedZDR);
+  RAVE_OBJECT_RELEASE(attCorrectedZDR);
   RAVE_OBJECT_RELEASE(correctedZPHI);
   RAVE_OBJECT_RELEASE(correctedPDP);
   RAVE_OBJECT_RELEASE(correctedDBZH);
