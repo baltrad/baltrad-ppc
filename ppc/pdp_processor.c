@@ -401,12 +401,10 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     RAVE_ERROR0("Could not create clutter map");
     goto done;
   }
-  // fprintf(stderr, "Starting actual calculations after %ld ms\n", PdpProcessorInternal_timestamp() - starttime);
-  // IMPORTANT NOTE: The following command has to be applied until the
-  //                 moment comuptation is corrected at RSP level
-  dataPDP = RaveData2D_mulNumber(dataPHIDP, -1.0);
+
+  dataPDP = RaveData2D_mulNumber(dataPHIDP, 1.0); /* Previously was multiplied with -1, but now RSP level should be ok...*/
   if (dataPDP == NULL) {
-    RAVE_ERROR0("Failed to multiplate PHIDP");
+    RAVE_ERROR0("Failed to multiplicate PHIDP");
     goto done;
   }
   nodataPHIDP = nodata;
