@@ -223,6 +223,7 @@ static struct PyMethodDef _pyppcradaroptions_methods[] =
   {"processingTextureThreshold", NULL},
   {"meltingLayerBottomHeight", NULL},
   {"meltingLayerHourThreshold", NULL},
+  {"invertPHIDP", NULL},
   {"setBand", (PyCFunction)_pyppcradaroptions_setBand, METH_VARARGS, _pyppcro_setBand_doc},
   {NULL, NULL} /* sentinel */
 };
@@ -330,6 +331,8 @@ static PyObject* _pyppcradaroptions_getattro(PyPpcRadarOptions* self, PyObject* 
     return PyFloat_FromDouble(PpcRadarOptions_getMeltingLayerBottomHeight(self->options));
   } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "meltingLayerHourThreshold") == 0) {
     return PyFloat_FromDouble(PpcRadarOptions_getMeltingLayerHourThreshold(self->options));
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "invertPHIDP") == 0) {
+    return PyBool_FromLong(PpcRadarOptions_getInvertPHIDP(self->options));
   }
   return PyObject_GenericGetAttr((PyObject*)self, name);
 }
@@ -702,6 +705,16 @@ static int _pyppcradaroptions_setattro(PyPpcRadarOptions* self, PyObject* name, 
       PpcRadarOptions_setMeltingLayerHourThreshold(self->options, (int)PyInt_AsLong(val));
     } else {
       raiseException_gotoTag(done, PyExc_ValueError, "meltingLayerHourThreshold must be of integer");
+    }
+  } else if (PY_COMPARE_ATTRO_NAME_WITH_STRING(name, "invertPHIDP") == 0) {
+    if (PyBool_Check(val)) {
+      if (PyObject_IsTrue(val)) {
+        PpcRadarOptions_setInvertPHIDP(self->options, 1);
+      } else {
+        PpcRadarOptions_setInvertPHIDP(self->options, 0);
+      }
+    } else {
+      raiseException_gotoTag(done, PyExc_ValueError, "invertPHIDP must be of bool");
     }
   } else {
     raiseException_gotoTag(done, PyExc_AttributeError, PY_RAVE_ATTRO_NAME_TO_STRING(name));

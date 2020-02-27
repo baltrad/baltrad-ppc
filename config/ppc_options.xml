@@ -59,6 +59,7 @@
   - attenuationGammaH - gamma h value used in the attenuation
   - attenuationAlpha - alpha value used in the attenuation
   - attenuationPIAminZ - min PIA Z value in attenuation process
+  - invertPHIDP - If the RSP produces inerted values, then set this to 1. Otherwise 0, which means do not do anything
   - requestedFieldMask - '|' separated list of flags. Can be:
   -  - P_TH_CORR
   -  - P_ATT_TH_CORR
@@ -117,9 +118,10 @@
     <attenuationAlpha				value="0.2" />
     <attenuationPIAminZ				value="-30" />
     
-	<meltingLayerBottomHeight		value="2.463" />
-	<meltingLayerHourThreshold		value="6" />
-	
-	<requestedFields				value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
+    <meltingLayerBottomHeight		value="2.463" />
+    <meltingLayerHourThreshold		value="6" />
+    <invertPHIDP value="0" />
+
+    <requestedFields				value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
   </radaroptions>
 </ppc-options>

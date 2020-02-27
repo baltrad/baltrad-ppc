@@ -486,6 +486,14 @@ class PyPpcRadarOptionsTest(unittest.TestCase):
     a.meltingLayerHourThreshold = 1
     self.assertEqual(1, a.meltingLayerHourThreshold);
 
+  def testInvertPHIDP(self):
+    a = _ppcradaroptions.new()
+    self.assertTrue("invertPHIDP" in dir(a))
+    
+    self.assertEqual(False, a.invertPHIDP)
+    a.invertPHIDP = True
+    self.assertEqual(True, a.invertPHIDP)
+
 if __name__ == "__main__":
   #import sys;sys.argv = ['', 'Test.testName']
   unittest.main()

@@ -78,6 +78,7 @@ struct _PpcRadarOptions_t {
   double attenuationGammaH; /**< gamma h value used in the attenuation */
   double attenuationAlpha;  /**< alpha value used in the attenuation */
   double attenuationPIAminZ; /**< min PIA Z value in attenuation process */
+  int invertPHIDP; /**< If PHIDP should be inverted or not */
 
   double meltingLayerBottomHeight; /**< the default melting layer bottom height */
   long meltingLayerHourThreshold; /**< number of hours before default height is used */
@@ -142,6 +143,8 @@ static int PpcRadarOptions_constructor(RaveCoreObject* obj)
   options->meltingLayerBottomHeight = 2.463;
   options->meltingLayerHourThreshold = 6;
 
+  options->invertPHIDP = 0;
+
   options->requestedFieldMask = PpcRadarOptions_DBZH_CORR|PpcRadarOptions_ATT_DBZH_CORR|PpcRadarOptions_PHIDP_CORR|PpcRadarOptions_QUALITY_RESIDUAL_CLUTTER_MASK;
 
   return 1;
@@ -205,6 +208,8 @@ static int PpcRadarOptions_copyconstructor(RaveCoreObject* obj, RaveCoreObject* 
 
   this->meltingLayerBottomHeight = src->meltingLayerBottomHeight;
   this->meltingLayerHourThreshold = src->meltingLayerHourThreshold;
+
+  this->invertPHIDP = src->invertPHIDP;
 
   this->requestedFieldMask = src->requestedFieldMask;
 
@@ -798,7 +803,21 @@ double PpcRadarOptions_getAttenuationPIAminZ(PpcRadarOptions_t* self)
   return self->attenuationPIAminZ;
 }
 
+void PpcRadarOptions_setInvertPHIDP(PpcRadarOptions_t* self, int v)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  if (v == 0) {
+    self->invertPHIDP = v;
+  } else {
+    self->invertPHIDP = 1;
+  }
+}
 
+int PpcRadarOptions_getInvertPHIDP(PpcRadarOptions_t* self)
+{
+  RAVE_ASSERT((self != NULL), "self == NULL");
+  return self->invertPHIDP;
+}
 /*@} End of Interface functions */
 
 RaveCoreObjectType PpcRadarOptions_TYPE = {

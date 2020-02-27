@@ -402,7 +402,11 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
-  dataPDP = RaveData2D_mulNumber(dataPHIDP, 1.0); /* Previously was multiplied with -1, but now RSP level should be ok...*/
+  if (PpcRadarOptions_getInvertPHIDP(self->options) == 1) {
+    dataPDP = RaveData2D_mulNumber(dataPHIDP, -1.0); /** RSP produces inverted data */
+  } else {
+    dataPDP = RaveData2D_mulNumber(dataPHIDP, 1.0); /* Really don't do anything.*/
+  }
   if (dataPDP == NULL) {
     RAVE_ERROR0("Failed to multiplicate PHIDP");
     goto done;

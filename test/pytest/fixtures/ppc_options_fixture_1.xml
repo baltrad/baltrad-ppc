@@ -42,10 +42,12 @@
     <attenuationAlpha				value="333.5" />
     <attenuationPIAminZ				value="333.6" />
 
-	<meltingLayerBottomHeight		value="444.1" />
-	<meltingLayerHourThreshold		value="5" />
+    <meltingLayerBottomHeight		value="444.1" />
+    <meltingLayerHourThreshold		value="5" />
 
-	<requestedFields				value="P_TH_CORR|P_PHIDP_CORR|Q_ATTENUATION_MASK" />
+    <invertPHIDP value="0" />
+
+    <requestedFields				value="P_TH_CORR|P_PHIDP_CORR|Q_ATTENUATION_MASK" />
   </radaroptions>
 
   <radaroptions name="uses_standard" /> <!-- Uses standard default values -->
@@ -56,6 +58,7 @@
     <kdpUp							value="444.1" />
     <kdpDown						value="444.2" />
     <kdpStdThreshold				value="444.3" />
+    <invertPHIDP value="1" />
   </radaroptions>
 
   <radaroptions name="overrided_default" default="modified_default" > <!-- Uses default above but with some modified values-->

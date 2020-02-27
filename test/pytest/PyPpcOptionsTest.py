@@ -92,7 +92,8 @@ class PyPpcOptionsTest(unittest.TestCase):
     self.assertAlmostEqual(333.5, a.attenuationAlpha, 3)    
     self.assertAlmostEqual(333.6, a.attenuationPIAminZ, 3)    
 
-    self.assertAlmostEqual(444.1, a.meltingLayerBottomHeight, 3)    
+    self.assertAlmostEqual(444.1, a.meltingLayerBottomHeight, 3)
+    self.assertEqual(False, a.invertPHIDP)
     self.assertEqual(5, a.meltingLayerHourThreshold)
     
     self.assertEqual(_ppcradaroptions.P_TH_CORR|_ppcradaroptions.P_PHIDP_CORR|_ppcradaroptions.Q_ATTENUATION_MASK, a.requestedFields)
@@ -327,7 +328,7 @@ class PyPpcOptionsTest(unittest.TestCase):
     self.assertAlmostEqual(333.4, a.attenuationGammaH, 3)    
     self.assertAlmostEqual(333.5, a.attenuationAlpha, 3)    
     self.assertAlmostEqual(333.6, a.attenuationPIAminZ, 3)    
-
+    self.assertEqual(True, a.invertPHIDP)
     self.assertEqual(_ppcradaroptions.P_TH_CORR|_ppcradaroptions.P_PHIDP_CORR|_ppcradaroptions.Q_ATTENUATION_MASK, a.requestedFields)
 
   def testLoad_overrided_default(self):

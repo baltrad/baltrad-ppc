@@ -165,6 +165,24 @@ done:
   return result;
 }
 
+static int PpcOptionsInternal_setIntFun(SimpleXmlNode_t* child, PpcRadarOptions_t* options, RaveObjectHashTable_t* tagNames, const char* name, void (*intfun)(PpcRadarOptions_t*, int))
+{
+  int result = 0;
+  const char* value = SimpleXmlNode_getAttribute(child, "value");
+  if (value != NULL) {
+    int v = 0;
+    if (sscanf(value, "%d", &v) != 1) {
+      RAVE_ERROR0("Failed to parse int value");
+      goto done;
+    }
+    intfun(options, v);
+    PpcOptionsInternal_addTagName(tagNames, name);
+    result = 1;
+  }
+done:
+  return result;
+}
+
 static int PpcOptionsInternal_setRequestedFields(SimpleXmlNode_t* child, PpcRadarOptions_t* options, RaveObjectHashTable_t* tagNames, const char* name)
 {
   int result = 0;
@@ -388,6 +406,9 @@ static PpcRadarOptions_t* PpcOptionsInternal_createRadarOptionsFromNode(PpcOptio
       } else if (strcasecmp("requestedFields", nodeName) == 0 &&
                  !PpcOptionsInternal_setRequestedFields(child, options, tagNames, nodeName)) {
           RAVE_ERROR0("Failed to set requestedFields in radar options");
+      } else if (strcasecmp("invertPHIDP", nodeName) == 0 &&
+          !PpcOptionsInternal_setIntFun(child, options, tagNames, nodeName, PpcRadarOptions_setInvertPHIDP)) {
+          RAVE_ERROR0("Failed to set invertPHIDP in radar options");
       }
     }
 
@@ -531,6 +552,9 @@ int PpcOptionsInternal_merge(PpcOptions_t* self, PpcRadarOptions_t* options, Ppc
     }
     if (!RaveObjectHashTable_exists(optionTagNames, "meltingLayerHourThreshold")) {
       PpcRadarOptions_setMeltingLayerHourThreshold(options, PpcRadarOptions_getMeltingLayerHourThreshold(other));
+    }
+    if (!RaveObjectHashTable_exists(optionTagNames, "invertPHIDP")) {
+      PpcRadarOptions_setInvertPHIDP(options, PpcRadarOptions_getInvertPHIDP(other));
     }
   }
   RAVE_OBJECT_RELEASE(optionTagNames);

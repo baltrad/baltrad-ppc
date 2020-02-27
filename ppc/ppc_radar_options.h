@@ -650,4 +650,18 @@ void PpcRadarOptions_setAttenuationPIAminZ(PpcRadarOptions_t* self, double v);
  */
 double PpcRadarOptions_getAttenuationPIAminZ(PpcRadarOptions_t* self);
 
+/**
+ * Sets if the PHIDP should be inverted (multiplied with -1) or not. Typically this can be needed if the RSP produces inverted values.
+ * @param[in] self - self
+ * @param[in] v - 0 If PHIDP not should be inverted and 1 if PHIDP should be inverted.
+ */
+void PpcRadarOptions_setInvertPHIDP(PpcRadarOptions_t* self, int v);
+
+/**
+ * Returns if the PHIDP should be inverted (multiplied with -1) or not. Typically this can be needed if the RSP produces inverted values.
+ * @param[in] self - self
+ * returns 0 If PHIDP not should be inverted and 1 if PHIDP should be inverted. Default is 0.
+ */
+int PpcRadarOptions_getInvertPHIDP(PpcRadarOptions_t* self);
+
 #endif /* PPC_RADAR_OPTIONS_H_ */
