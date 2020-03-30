@@ -56,7 +56,6 @@ static int PdpProcessor_constructor(RaveCoreObject* obj)
 	if (pdp->options == NULL) {
 	  return 0;
 	}
-
   return 1;
 }
 
@@ -75,12 +74,16 @@ static int PdpProcessor_copyconstructor(RaveCoreObject* obj, RaveCoreObject* src
 {
   PdpProcessor_t* this = (PdpProcessor_t*)obj;
   PdpProcessor_t* src = (PdpProcessor_t*)srcobj;
+  int result = 0;
   this->meltingLayerBottomHeight = src->meltingLayerBottomHeight;
   this->options = RAVE_OBJECT_CLONE(src->options);
   if (this->options == NULL) {
-    return 0;
+    goto fail;
   }
-  return 1;
+  result = 1;
+fail:
+  RAVE_OBJECT_RELEASE(this->options);
+  return result;
 }
 
 /**
@@ -324,8 +327,7 @@ PpcRadarOptions_t* PdpProcessor_getRadarOptions(PdpProcessor_t* self)
   return RAVE_OBJECT_COPY(self->options);
 }
 
-
-PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
+PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan, RaveData2D_t* sclutterMap)
 {
   PolarScan_t *result = NULL, *tmpresult = NULL;
   double elangle = 0.0;
@@ -396,10 +398,18 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
     goto done;
   }
 
-  clutterMap = RaveData2D_zeros(nbins, nrays, RaveDataType_DOUBLE);
-  if (clutterMap == NULL) {
-    RAVE_ERROR0("Could not create clutter map");
-    goto done;
+  if (sclutterMap != NULL) {
+    if (RaveData2D_getXsize(sclutterMap) != nbins || RaveData2D_getYsize(sclutterMap) != nrays) {
+      RAVE_ERROR0("Clutter Map dimension doesn't match number of rays/bins rays == ysize, bins = xsize");
+      goto done;
+    }
+    clutterMap = RAVE_OBJECT_COPY(sclutterMap);
+  } else {
+    clutterMap = RaveData2D_zeros(nbins, nrays, RaveDataType_DOUBLE);
+    if (clutterMap == NULL) {
+      RAVE_ERROR0("Could not create clutter map");
+      goto done;
+    }
   }
 
   if (PpcRadarOptions_getInvertPHIDP(self->options) == 1) {
@@ -447,7 +457,7 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan)
    **************************************************************/
   qualityThreshold = PpcRadarOptions_getQualityThreshold(self->options);
 
-  if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, dataPDP,
+  if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, clutterMap,
         PolarScanParam_getNodata(TH), PolarScanParam_getNodata(DV), qualityThreshold,
         &outZ, &outQuality, &outClutterMask)) {
     goto done;

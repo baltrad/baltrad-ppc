@@ -530,6 +530,16 @@ class PyPdpProcessorTest(unittest.TestCase):
     #b.object = result
     #b.save("thresult.h5")
 
+  def test_process_with_clutterMap(self):
+    a=_raveio.open(self.PVOL_TESTFILE)
+    processor = _pdpprocessor.new()
+    processor.options.requestedFields = _ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_ZPHI_CORR
+    clutterMap = _ravedata2d.new(numpy.zeros((a.object.getScan(0).nrays, a.object.getScan(0).nbins), numpy.float64))
+    result = processor.process(a.object.getScan(0), clutterMap)
+    self.assertFalse(result.hasParameter("TH_CORR"))
+    self.assertTrue(result.hasParameter("KDP_CORR"))
+    self.assertTrue(result.hasParameter("ZPHI_CORR"))
+
   def Xtest_odd_th(self):
     a=_raveio.open("sehem_pvol_pn215_20191128T000000Z_0x73fc7b.h5")
     processor = _pdpprocessor.new()

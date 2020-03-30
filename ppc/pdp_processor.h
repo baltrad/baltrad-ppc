@@ -64,9 +64,10 @@ PpcRadarOptions_t* PdpProcessor_getRadarOptions(PdpProcessor_t* self);
  * according to the matlab prototype developed by Gianfranco Vulpiani.
  * @param[in] self - self
  * @param[in] scan - the polar scan
+ * @param[in] sclutterMap - the statistical clutter map (if NULL, then default cluttermap with 0s will be used)
  * @returns new scan on success otherwise NULL
  */
-PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan);
+PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan, RaveData2D_t* sclutterMap);
 
 /**
  * Sets the melting layer bottom height. Default is < -1.0 (km) and in that case, the value from the ppc radar options is used.

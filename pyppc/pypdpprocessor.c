@@ -319,18 +319,25 @@ static PyObject* _pypdpprocessor_residualClutterFilter(PyPdpProcessor* self, PyO
  */
 static PyObject* _pypdpprocessor_process(PyPdpProcessor* self, PyObject* args)
 {
-  PyObject* pyin = NULL;
+  PyObject *pyin = NULL, *pysclutterMap = NULL;
   PolarScan_t* resultScan = NULL;
   PyObject* pyresult = NULL;
+  RaveData2D_t* sclutterMap = NULL;
 
-  if (!PyArg_ParseTuple(args, "O", &pyin))
+  if (!PyArg_ParseTuple(args, "O|O", &pyin, &pysclutterMap))
     return NULL;
 
   if (!PyPolarScan_Check(pyin)) {
-    raiseException_returnNULL(PyExc_RuntimeError, "Indata must be polar scan");
+    raiseException_returnNULL(PyExc_RuntimeError, "Indata must be polar scan (and eventually a cluttermap as ravedata2d object)");
   }
 
-  resultScan = PdpProcessor_process(self->processor, ((PyPolarScan*)pyin)->scan);
+  if (pysclutterMap != NULL && !PyRaveData2D_Check(pysclutterMap)) {
+    raiseException_returnNULL(PyExc_RuntimeError, "Indata must be polar scan (and eventually a cluttermap as ravedata2d object)");
+  }
+  if (pysclutterMap != NULL) {
+    sclutterMap = ((PyRaveData2D*)pysclutterMap)->field;
+  }
+  resultScan = PdpProcessor_process(self->processor, ((PyPolarScan*)pyin)->scan, sclutterMap);
   if (resultScan == NULL) {
     raiseException_returnNULL(PyExc_RuntimeError, "Failed to process scan");
   }

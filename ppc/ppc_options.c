@@ -656,7 +656,6 @@ int PpcOptions_addRadarOptions(PpcOptions_t* self, PpcRadarOptions_t* options)
 
 RaveObjectHashTable_t* PpcOptions_options(PpcOptions_t* self)
 {
-  int result = 0;
   RAVE_ASSERT((self != NULL), "self == NULL");
   return RAVE_OBJECT_CLONE(self->radaroptions);
 }
