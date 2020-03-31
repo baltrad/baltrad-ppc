@@ -410,6 +410,9 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan, RaveD
       RAVE_ERROR0("Could not create clutter map");
       goto done;
     }
+    RaveData2D_useNodata(clutterMap, 1);
+    RaveData2D_setNodata(clutterMap, 0.0);
+
   }
 
   if (PpcRadarOptions_getInvertPHIDP(self->options) == 1) {
@@ -456,6 +459,13 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan, RaveD
    * Clutter removal by using a Fuzzy Logic Approach
    **************************************************************/
   qualityThreshold = PpcRadarOptions_getQualityThreshold(self->options);
+
+  //fprintf(stderr, "dataTH:%d\n", RaveData2D_usingNodata(dataTH));
+  //fprintf(stderr, "dataDV:%d\n", RaveData2D_usingNodata(dataDV));
+  //fprintf(stderr, "texturePHIDP:%d\n", RaveData2D_usingNodata(texturePHIDP));
+  //fprintf(stderr, "dataRHOHV:%d\n", RaveData2D_usingNodata(dataRHOHV));
+  //fprintf(stderr, "textureZ:%d\n", RaveData2D_usingNodata(textureZ));
+  //fprintf(stderr, "clutterMap:%d\n", RaveData2D_usingNodata(clutterMap));
 
   if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, clutterMap,
         PolarScanParam_getNodata(TH), PolarScanParam_getNodata(DV), qualityThreshold,
@@ -852,6 +862,9 @@ done:
 RaveData2D_t* PdpProcessor_trap(PdpProcessor_t* self, RaveData2D_t* xarr, double a, double b, double s, double t)
 {
   long xi, yi, xsize, ysize;
+  int usingNodata = 0;
+  double nodataV = 0.0;
+
   RaveData2D_t* field = NULL;
 
   RAVE_ASSERT((self != NULL), "self == NULL");
@@ -862,13 +875,19 @@ RaveData2D_t* PdpProcessor_trap(PdpProcessor_t* self, RaveData2D_t* xarr, double
   xsize = RaveData2D_getXsize(xarr);
   ysize = RaveData2D_getYsize(xarr);
   field = RaveData2D_zeros(xsize, ysize, RaveDataType_DOUBLE);
-  if (field == NULL)
+  if (field == NULL) {
     return NULL;
+  }
+  usingNodata = RaveData2D_usingNodata(xarr);
+  nodataV = RaveData2D_getNodata(xarr);
 
   for (xi = 0; xi < xsize; xi++) {
     for (yi = 0; yi < ysize; yi++) {
       double x = 0.0, out = 0.0;
       RaveData2D_getValueUnchecked(xarr, xi, yi, &x);
+      if (usingNodata && x == nodataV)  {
+        continue;
+      }
       if ((x <= a - s) || (x > b + t)) {
         out = 0;
       }

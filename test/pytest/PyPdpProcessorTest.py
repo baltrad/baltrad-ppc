@@ -200,6 +200,52 @@ class PyPdpProcessorTest(unittest.TestCase):
       for j in range(4):
         self.assertAlmostEqual(result.getData()[i,j], expected[i,j], 3)
 
+  def test_trap_3(self):
+    processor = _pdpprocessor.new()
+    data2d = _ravedata2d.new()
+    # Use odd nodata just to ensure that it is handled....
+    data2d.nodata=-999.0
+    data2d.useNodata=True
+    data2d.setData(numpy.array([
+                             [   1.0, 2.0, 3.0,    1.5],
+                             [   5.0, 6.0, 7.0,    1.5],
+                             [   8.0, 7.0, 6.0,    5.0],
+                             [   1.5, 3.0, 2.0,    1.0]], numpy.float64))
+
+    result = processor.trap(data2d, 1.0, 2.0, 3.0, 4.0)
+    expected = numpy.array([
+      [1.00000,   1.00000,   0.7500,   1.00000],
+      [0.25000,   0.00000,   0.00000,   1.00000],
+      [0.00000,   0.00000,   0.00000,   0.25000],
+      [1.00000,   0.75000,   1.00000,   1.00000]], numpy.float64)
+
+    for i in range(4):
+      for j in range(4):
+        self.assertAlmostEqual(result.getData()[i,j], expected[i,j], 3)
+
+  def test_trap_4(self):
+    processor = _pdpprocessor.new()
+    data2d = _ravedata2d.new()
+    # Use odd nodata just to ensure that it is handled....
+    data2d.nodata=1.5
+    data2d.useNodata=True
+    data2d.setData(numpy.array([
+                             [   1.0, 2.0, 3.0,    1.5],
+                             [   5.0, 6.0, 7.0,    1.5],
+                             [   8.0, 7.0, 6.0,    5.0],
+                             [   1.5, 3.0, 2.0,    1.0]], numpy.float64))
+
+    result = processor.trap(data2d, 1.0, 2.0, 3.0, 4.0)
+    expected = numpy.array([
+      [1.00000,   1.00000,   0.7500,   0.00000],
+      [0.25000,   0.00000,   0.00000,   0.00000],
+      [0.00000,   0.00000,   0.00000,   0.25000],
+      [0.00000,   0.75000,   1.00000,   1.00000]], numpy.float64)
+
+    for i in range(4):
+      for j in range(4):
+        self.assertAlmostEqual(result.getData()[i,j], expected[i,j], 3)
+
   def test_clutterID_1(self):
     processor = _pdpprocessor.new()
     
