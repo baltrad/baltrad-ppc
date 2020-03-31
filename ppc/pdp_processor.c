@@ -465,7 +465,10 @@ PolarScan_t* PdpProcessor_process(PdpProcessor_t* self, PolarScan_t* scan, RaveD
   //fprintf(stderr, "texturePHIDP:%d\n", RaveData2D_usingNodata(texturePHIDP));
   //fprintf(stderr, "dataRHOHV:%d\n", RaveData2D_usingNodata(dataRHOHV));
   //fprintf(stderr, "textureZ:%d\n", RaveData2D_usingNodata(textureZ));
-  //fprintf(stderr, "clutterMap:%d\n", RaveData2D_usingNodata(clutterMap));
+  RAVE_DEBUG1("clutterMap: %d", RaveData2D_usingNodata(clutterMap));
+  if (!RaveData2D_usingNodata(clutterMap)) {
+    RAVE_ERROR0("Static clutter map doesn't specify nodata!");
+  }
 
   if (!PdpProcessor_clutterCorrection(self, dataTH, dataDV, texturePHIDP, dataRHOHV, textureZ, clutterMap,
         PolarScanParam_getNodata(TH), PolarScanParam_getNodata(DV), qualityThreshold,

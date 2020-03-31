@@ -18,7 +18,7 @@ _rave.setDebugLevel(_rave.Debug_RAVE_SPEWDEBUG)
 
 class PyPdpProcessorTest(unittest.TestCase):
   PVOL_TESTFILE="fixtures/sevax_qcvol_pn129_20170816T000000Z_0x73fc7b.h5"
-  
+  MAT_FIXTURE="fixtures/example_cluttermap.mat"
   TEMPORARY_FILE="ppctest_file1.h5"
   TEMPORARY_FILE2="ropotest_file2.h5"
   
@@ -544,7 +544,7 @@ class PyPdpProcessorTest(unittest.TestCase):
         self.assertAlmostEqual(zphi.getData()[i,j], expected_zphi[i,j], 3)
         self.assertAlmostEqual(ah.getData()[i,j], expected_ah[i,j], 3)  
 
-  #def test_process_CORR_KDP_CORR_ZPHI(self):
+  #def test_process_CORR_K"""DP_CORR_ZPHI(self):
   #  a=_raveio.open(self.PVOL_TESTFILE)
   #  processor = _pdpprocessor.new()
   #  result = processor.process(a.object.getScan(0))
@@ -576,11 +576,35 @@ class PyPdpProcessorTest(unittest.TestCase):
     #b.object = result
     #b.save("thresult.h5")
 
-  def test_process_with_clutterMap(self):
+  def test_process_with_fake_clutterMap(self):
     a=_raveio.open(self.PVOL_TESTFILE)
     processor = _pdpprocessor.new()
     processor.options.requestedFields = _ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_ZPHI_CORR
     clutterMap = _ravedata2d.new(numpy.zeros((a.object.getScan(0).nrays, a.object.getScan(0).nbins), numpy.float64))
+    clutterMap.useNodata=True
+    clutterMap.nodata=0.0
+    result = processor.process(a.object.getScan(0), clutterMap)
+    self.assertFalse(result.hasParameter("TH_CORR"))
+    self.assertTrue(result.hasParameter("KDP_CORR"))
+    self.assertTrue(result.hasParameter("ZPHI_CORR"))
+
+  def test_process_with_matlab_clutterMap(self):
+    import warnings
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed") # Will dissapear when numpy is upgraded...
+    try:
+      import scipy.io
+    except:
+      print("Ignoring matlab cluttermap read test")
+      return
+    a=_raveio.open(self.PVOL_TESTFILE)
+    mat = scipy.io.loadmat(self.MAT_FIXTURE)
+    cm = mat['Map'][0][0][0][:,:,0] # 0 represents actual elevation. In our case elangle 0
+    cm = numpy.nan_to_num(cm, -999.0)
+    clutterMap = _ravedata2d.new(cm.transpose())
+    clutterMap.useNodata=True
+    clutterMap.nodata=-999.0
+    processor = _pdpprocessor.new()
+    processor.options.requestedFields = _ppcradaroptions.P_KDP_CORR | _ppcradaroptions.P_ZPHI_CORR
     result = processor.process(a.object.getScan(0), clutterMap)
     self.assertFalse(result.hasParameter("TH_CORR"))
     self.assertTrue(result.hasParameter("KDP_CORR"))
