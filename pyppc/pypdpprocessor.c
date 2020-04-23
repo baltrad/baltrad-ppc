@@ -213,6 +213,15 @@ static PyObject* _pypdpprocessor_clutterID(PyPdpProcessor* self, PyObject* args)
   if (!PyArg_ParseTuple(args, "OOOOOOdd", &pyinZ, &pyinVRADH, &pyinTexturePHIDP, &pyinRHOHV, &pyinTextureZ, &pyinClutterMap, &nodataZ, &nodataVRADH))
     return NULL;
 
+  if (!PyRaveData2D_Check(pyinZ) ||
+      !PyRaveData2D_Check(pyinVRADH) ||
+      !PyRaveData2D_Check(pyinTexturePHIDP) ||
+      !PyRaveData2D_Check(pyinRHOHV) ||
+      !PyRaveData2D_Check(pyinTextureZ) ||
+      !PyRaveData2D_Check(pyinClutterMap)) {
+    raiseException_returnNULL(PyExc_AttributeError, "Z, VRADH, TexturePHIDP, RHOHV, TextureZ and ClutterMap has be of type RaveData2DCore");
+  }
+
   clutterIDResult = PdpProcessor_clutterID(self->processor, ((PyRaveData2D*)pyinZ)->field, ((PyRaveData2D*)pyinVRADH)->field,
       ((PyRaveData2D*)pyinTexturePHIDP)->field, ((PyRaveData2D*)pyinRHOHV)->field, ((PyRaveData2D*)pyinTextureZ)->field,
       ((PyRaveData2D*)pyinClutterMap)->field, nodataZ, nodataVRADH);
@@ -639,7 +648,7 @@ PyTypeObject PyPdpProcessor_Type =
 
 /*@{ Documentation about the module */
 PyDoc_STRVAR(_pypdpprocessor_doc,
-    "This is the polarimetric processing chain module.\n"
+    "This is the polarimetric processing chain module itself.\n"
     "\n"
     "The easiest way to get started is to use the process function which combines all functions into a chain but\n"
     "first you will have to create an instance of the _pdpprocessor which is done by:\n"
@@ -663,16 +672,17 @@ PyDoc_STRVAR(_pypdpprocessor_doc,
     "\n"
     "The functions are:\n"
     "\n"
-    "scan := process(scan)\n"
-    " Performs the actual polarimetric processing chain.\n"
+    "scan := process(scan, clutterMap)\n"
+    " Performs the polarimetric processing chain.\n"
     " - indata\n"
-    "   scan - a polar scan\n"
+    "   scan       - a polar scan\n"
+    "   clutterMap - the statistical clutter map."
     " - returns a scan of type PolarScanParam\n"
     "\n"
     "texture := texture(field)\n"
     " Creates a texture from the provided data field.\n"
     " - indata:\n"
-    "   texture (RaveData2DCore)      - An arbitary field\n"
+    "   field (RaveData2DCore)      - An arbitary field\n"
     " - returns a texture of type RaveData2DCore\n"
     "\n"
     "degree := trap(field, a, b, s, t)\n"
@@ -700,11 +710,12 @@ PyDoc_STRVAR(_pypdpprocessor_doc,
     "   qualityThreshold (float)      - Threshold for the quality as generated.\n"
     " - returns a tuple (Z, Quality, ClutterMask) of type RaveData2DCore\n"
     "\n"
-    "degree := clutterID(Z, VRADH, RHOHV, TextureZ, ClutterMap, nodataZ, nodataVRADH)\n"
+    "degree := clutterID(Z, VRADH, texturePHIDP, RHOHV, TextureZ, ClutterMap, nodataZ, nodataVRADH)\n"
     " Clutter identification function. That calculates a field containing a degree of membership of a target weather class.\n"
     " - indata:\n"
     "   Z  (RaveData2DCore)         - Reflectivity\n"
     "   VRADH (RaveData2DCore)      - Doppler velocity\n"
+    "   texturePHIDP (PyRaveData2D) - The PHIDP texture"
     "   RHOHV  (RaveData2DCore)     - Correlation coefficient\n"
     "   TextureZ (RaveData2DCore)   - Texture of Z\n"
     "   ClutterMap (RaveData2DCore) - Statistical clutter map\n"
@@ -763,9 +774,8 @@ PyDoc_STRVAR(_pypdpprocessor_doc,
     "                               correction see source code for process for more information of type RaveData2DCore\n"
     "   gamma_h (float)           - Coefficient relating specific attenuation and specific differential phase.\n"
     "   alpha (float)             - Is the quota AH / ADP where AH is the specific attenuation and ADP is the specific differential attenuation.\n"
-    "   rWin1 (float)             - Half of moving window size expressed in km applied to the az-rays characterized by low to moderate total phase shift\n"
-    "   rWin2 (float)             - Half of moving window size expressed in km applied to the az-rays characterized by moderate to high total phase shift\n"
-    "   nrIter (number)           - Number of iteration the procedure has to be applied to keep the excpected std dev of KDP under control\n"
+    "   zundectect (float)        - Z fields undetect value.\n"
+    "   dbzhundetect (float)      - DBZH fields undetect value.\n"
     " - returns a tuple of attenuated fields (Z, ZDR, PIA, DBZH) of type RaveData2DCore\n"
     "\n"
     "(Zphi, AH) := zphi(Z, PDP, mask, dr, BB, gamma_h)\n"

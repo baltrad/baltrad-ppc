@@ -335,7 +335,7 @@ PyTypeObject PyPpcOptions_Type =
 /*@{ Documentation about the module */
 PyDoc_STRVAR(_pyppcoptions_doc,
     "This is the ppc options loader. It is used to load ppc radar option configuration files written in xml-format.\n"
-    "There are only a few member functions available here and currently there is no support for saving the configuration.\n"
+    "There are only a few member functions available here  (getRadarOptions, exists and options) and currently there is no support for saving the configuration.\n"
     "\n"
     " The available functions are: \n"
     "   - radaroptions := getRadarOptions(string)\n"

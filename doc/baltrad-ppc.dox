@@ -44,7 +44,8 @@ The steps performed in the processing chain are:
 
 1. Clutter filtering 
 
-    - Is based on Fuzzy Logic using the reflectivity factor (Z), doppler velocity (V), the correlation coefficient &rho;HV, the texture of &Phi;DP and a statistical clutter map (cmap).
+    - Is based on Fuzzy Logic using the reflectivity factor (Z), doppler velocity (V), the correlation coefficient &rho;HV, the texture of &Phi;DP and a statistical clutter map (cmap). The statistical clutter map has to be calculated externally and
+    given to the process function in the _pdpprocessor module described later in this documentation. 
 
 2. Residual clutter filtering
 
@@ -57,13 +58,13 @@ The steps performed in the processing chain are:
     - When generating the attenuation mask, the bin heights must be below the melting layer height before taking RHOHV, KDP and TH into account. 
 
 5. Attenuation correction
-    - based two different methods, linear method and ZPHI.
+    - based on two different methods, linear method and ZPHI.
     
 
-When the above steps has been performed a number of different products will be added to the original radar data and then returned to the user of the process.
+When the above steps have been performed a number of different products will be added to the original radar data and then returned to the user of the process.
 
 \section python_functions Python functions
-Some functions has been added to the public python APIs so that it's possible to run parts of the chain if needed. For example in tests or when evaluating the functions.
+Some functions have been added to the public python APIs so that it's possible to run parts of the chain if needed. For example in tests or when evaluating the functions.
 There are 3 different modules that can be loaded.
 
 - _pdpprocessor
@@ -79,14 +80,19 @@ There are 3 different modules that can be loaded.
     - Object containing the configuration for one radar
 
 
-The easiest way to get hold of the documentation is to print the documentation for respective module which is what has been done in the
-3 subsections below.
+The documentation for each module is obtained with the following command
+\verbatim
+>>> import module
+>>> print(module.__doc__)
+\endverbatim
+
+ The documentation for respective module is displayed below..
 
 \subsection python_functions_pdpprocessor Python PDP processor
 \verbatim
 >>> import _pdpprocessor
 >>> print(_pdpprocessor.__doc__)
-This is the polarimetric processing chain module.
+This is the polarimetric processing chain module itself.
 
 The easiest way to get started is to use the process function which combines all functions into a chain but
 first you will have to create an instance of the _pdpprocessor which is done by:
@@ -110,16 +116,16 @@ which only takes a rave polar scan as in argument.
 
 The functions are:
 
-scan := process(scan)
- Performs the actual polarimetric processing chain.
+scan := process(scan, clutterMap)
+ Performs the polarimetric processing chain.
  - indata
-   scan - a polar scan
- - returns a scan of type PolarScanParam
+   scan       - a polar scan
+   clutterMap - the statistical clutter map. - returns a scan of type PolarScanParam
 
 texture := texture(field)
  Creates a texture from the provided data field.
  - indata:
-   texture (RaveData2DCore)      - An arbitary field
+   field (RaveData2DCore)      - An arbitary field
  - returns a texture of type RaveData2DCore
 
 degree := trap(field, a, b, s, t)
@@ -147,12 +153,12 @@ degree := trap(field, a, b, s, t)
    qualityThreshold (float)      - Threshold for the quality as generated.
  - returns a tuple (Z, Quality, ClutterMask) of type RaveData2DCore
 
-degree := clutterID(Z, VRADH, RHOHV, TextureZ, ClutterMap, nodataZ, nodataVRADH)
+degree := clutterID(Z, VRADH, texturePHIDP, RHOHV, TextureZ, ClutterMap, nodataZ, nodataVRADH)
  Clutter identification function. That calculates a field containing a degree of membership of a target weather class.
  - indata:
    Z  (RaveData2DCore)         - Reflectivity
    VRADH (RaveData2DCore)      - Doppler velocity
-   RHOHV  (RaveData2DCore)     - Correlation coefficient
+   texturePHIDP (PyRaveData2D) - The PHIDP texture   RHOHV  (RaveData2DCore)     - Correlation coefficient
    TextureZ (RaveData2DCore)   - Texture of Z
    ClutterMap (RaveData2DCore) - Statistical clutter map
    nodataZ (float)             - Nodata for Z
@@ -210,9 +216,8 @@ mask := residualClutterFilter(Z, threshZ, threshTexture, (filtXsize, filtYsize))
                                correction see source code for process for more information of type RaveData2DCore
    gamma_h (float)           - Coefficient relating specific attenuation and specific differential phase.
    alpha (float)             - Is the quota AH / ADP where AH is the specific attenuation and ADP is the specific differential attenuation.
-   rWin1 (float)             - Half of moving window size expressed in km applied to the az-rays characterized by low to moderate total phase shift
-   rWin2 (float)             - Half of moving window size expressed in km applied to the az-rays characterized by moderate to high total phase shift
-   nrIter (number)           - Number of iteration the procedure has to be applied to keep the excpected std dev of KDP under control
+   zundectect (float)        - Z fields undetect value.
+   dbzhundetect (float)      - DBZH fields undetect value.
  - returns a tuple of attenuated fields (Z, ZDR, PIA, DBZH) of type RaveData2DCore
 
 (Zphi, AH) := zphi(Z, PDP, mask, dr, BB, gamma_h)
@@ -226,7 +231,7 @@ mask := residualClutterFilter(Z, threshZ, threshTexture, (filtXsize, filtYsize))
    BB (double)               - The exponent of the power law relating specific attenuation and Z.
  - returns a tuple of attenuated fields (Zphi, AH) of type RaveData2DCore where Zphi is attenuation
    corrected reflectivity and AH is estimated specific attenuation
-   
+
 \endverbatim
   
 \subsection python_functions_ppcoptions Python PPC options class
@@ -234,7 +239,7 @@ mask := residualClutterFilter(Z, threshZ, threshTexture, (filtXsize, filtYsize))
 >>> import _ppcoptions
 >>> print(_ppcoptions.__doc__)
 This is the ppc options loader. It is used to load ppc radar option configuration files written in xml-format.
-There are only a few member functions available here and currently there is no support for saving the configuration.
+There are only a few member functions available here  (getRadarOptions, exists and options) and currently there is no support for saving the configuration.
 
  The available functions are: 
    - radaroptions := getRadarOptions(string)
@@ -264,7 +269,7 @@ one could implement the usage as follows:
 >>> import _ppcradaroptions
 >>> print(_ppcradaroptions.__doc__)
 Keeps track of options used for the different radar sources when it comes to the polarimetric process chain
-processing.
+processing. In this documentation section all the available options are listed for the different radars and a description of the values they assume.
 
 The following settings are available:
 parametersUZ                 - parameters for TH, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2
@@ -279,7 +284,7 @@ parametersTextUZ             - parameters for the TH texture, 5 values separated
                                and the derived values will be X1=X2-Delta1, X3=X4-Delta2
 parametersClutterMap         - parameters for the clutter map, 5 values separated by ',' Weight,X2,X3,Delta1,Delta2
                                and the derived values will be X1=X2-Delta1, X3=X4-Delta2
-nodata                       - nodata to used in most products
+nodata                       - nodata to be used in most products
 minDBZ                       - min DBZ threshold in the clutter correction
 qualityThreshold             - quality threshold in the clutter correction
 preprocessZThreshold         - preprocessing Z threshold before starting actual processing
@@ -308,10 +313,13 @@ minAttenuationMaskTH         - min TH value for marking value as 1 in the attenu
 attenuationGammaH            - gamma h value used in the attenuation
 attenuationAlpha             - alpha value used in the attenuation
 attenuationPIAminZ           - min PIA Z value in attenuation process
-requestedFieldMask           - '|' separated list of flags that defines what products should be added to the finished result.
+meltingLayerBottomHeight     - The melting layer bottom height
+meltingLayerHourThreshold    - The number of hours before default height should be used.
+invertPHIDP                  - if the PHIDP should be inverted (multiplied with -1) or not. Typically this can be needed if the RSP produces inverted values.
+requestedFields              - '|' separated list of flags that defines what products should be added to the finished result.
                                If the flag begins with a P, it means that the result is added as a parameter and the name of
                                the parameter will be without the P_. If on the other hand the flag begins with a Q_ it means
-                               that the result is added as a quality field and in those cases the name will be
+                               that the result is added as a quality field and in those cases the how/task name will be
                                se.baltrad.ppc.<mask name without Q_ in lowercase>
                                Available flags are:
                                 + P_TH_CORR
@@ -343,13 +351,19 @@ a.save("/etc/baltrad/rave/etc/rave_pgf_quality_registry.xml")
 <center> \b Figure \b 2: Example registration </center>
 
 \section rave_pgf_ppc_options_xml ppc_options.xml
-Next step is to configure the various settings for respective radar. This is done in the file <b>/etc/baltrad/baltrad-ppc/config/ppc_options.xml</b>.
+Next step is to configure the various settings for respective radar. This file <b>/etc/baltrad/baltrad-ppc/config/ppc_options.xml</b> is used to configure the various options for
+the different radars.
 In ppc_options.xml you will find a brief explanation of the different parameters that are configurable and also how you can reuse configuration for different radar sources.
 
 The information described in the xml file will be roughly the same as explained when printing the doc for _ppcradaroptions. Some things to note though is that it is possible
-to build hierarchies of the properties. This means that you can differentiate configurations depending on the situation. 
-As an example, let us say that seang & sekkr should use default values except for attenuationAlpha. selul should use same same as sekkr but it also needs to modify attenuationGammaH
-to 0.09.
+to build hierarchies of the properties. This means that you can differentiate configurations depending on the situation. To get this configuration you will be able to override configuration settings from a parent. This is achieved by inheriting the options
+by defining a default attribute in the radaroptions-tag. 
+
+As an example, let us say that seang & sekkr should use default values except for attenuationAlpha. selul should use the same attenuationAlpha as sekkr but it also needs to 
+different attenuationGammaH set to 0.09. First you define an option group with the name default (&lt;radaroptions name="default"&gt;). After that you define a subgroup 
+called attenuationAlpha03 inheriting default setting from the previously created group. sekkr will just inherit attenuationAlpha03s options and selul will inherit sekkr with
+the modified attenuationGammaH. Obviously, it's possible to setup these options in several different ways all depending on needs. 
+
 
 \verbatim
 <?xml version='1.0' encoding='UTF-8'?>
@@ -399,7 +413,8 @@ to 0.09.
     
     <meltingLayerBottomHeight             value="2.463" />
     <meltingLayerHourThreshold            value="6" />
-	
+	  <invertPHIDP                          value="0" />
+	    
     <requestedFields                      value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
   </radaroptions>
   
