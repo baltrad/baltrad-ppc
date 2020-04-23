@@ -413,8 +413,8 @@ the modified attenuationGammaH. Obviously, it's possible to setup these options 
     
     <meltingLayerBottomHeight             value="2.463" />
     <meltingLayerHourThreshold            value="6" />
-	  <invertPHIDP                          value="0" />
-	    
+    <invertPHIDP                          value="0" />
+
     <requestedFields                      value="P_DBZH_CORR|P_ATT_DBZH_CORR|P_PHIDP_CORR|P_QUALITY_RESIDUAL_CLUTTER_MASK" />
   </radaroptions>
   
