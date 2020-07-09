@@ -29,8 +29,8 @@ The baltrad polarimetric processing chain quality algorithm is based on the work
 Gianfranco Vulpiani at SMHI in 2017. The original code was developed in Matlab and has been
 ported to work as a part of RAVE. 
 
-This documentation focus on the software and usage of the results so you will have to read
-<a href="/docs/Report_GVulpiani_reviewed.pdf" target="_blank"><b>Report</b></a> for a more indepth knowledge about the original implementation and
+This documentation focus on the software and usage of the results so you will have to read the
+<a href="/docs/Report_GVulpiani_reviewed.pdf" target="_blank"><b>report</b></a> for a more indepth knowledge about the original implementation and
 the physics behind it all.
 
 \section overview Overview
