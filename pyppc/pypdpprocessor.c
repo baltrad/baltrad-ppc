@@ -524,20 +524,20 @@ done:
  */
 static struct PyMethodDef _pypdpprocessor_methods[] =
 {
-  {"options", NULL},
-  {"meltingLayerBottomHeight", NULL},
-  {"texture", (PyCFunction)_pypdpprocessor_texture, 1},
-  {"trap", (PyCFunction)_pypdpprocessor_trap, 1},
-  {"clutterID", (PyCFunction)_pypdpprocessor_clutterID, 1},
-  {"clutterCorrection", (PyCFunction)_pypdpprocessor_clutterCorrection, 1},
-  {"medfilt", (PyCFunction)_pypdpprocessor_medfilt, 1},
-  {"residualClutterFilter", (PyCFunction)_pypdpprocessor_residualClutterFilter, 1},
-  {"process", (PyCFunction)_pypdpprocessor_process, 1},
-  {"pdpProcessing", (PyCFunction)_pypdpprocessor_pdpProcessing, 1},
-  {"pdpScript", (PyCFunction)_pypdpprocessor_pdpScript, 1},
-  {"attenuation", (PyCFunction)_pypdpprocessor_attenuation, 1},
-  {"zphi", (PyCFunction)_pypdpprocessor_zphi, 1},
-  {NULL, NULL} /* sentinel */
+  {"options", NULL, METH_VARARGS, NULL},
+  {"meltingLayerBottomHeight", NULL, METH_VARARGS, NULL},
+  {"texture", (PyCFunction)_pypdpprocessor_texture, METH_VARARGS, NULL},
+  {"trap", (PyCFunction)_pypdpprocessor_trap, METH_VARARGS, NULL},
+  {"clutterID", (PyCFunction)_pypdpprocessor_clutterID, METH_VARARGS, NULL},
+  {"clutterCorrection", (PyCFunction)_pypdpprocessor_clutterCorrection, METH_VARARGS, NULL},
+  {"medfilt", (PyCFunction)_pypdpprocessor_medfilt, METH_VARARGS, NULL},
+  {"residualClutterFilter", (PyCFunction)_pypdpprocessor_residualClutterFilter, METH_VARARGS, NULL},
+  {"process", (PyCFunction)_pypdpprocessor_process, METH_VARARGS, NULL},
+  {"pdpProcessing", (PyCFunction)_pypdpprocessor_pdpProcessing, METH_VARARGS, NULL},
+  {"pdpScript", (PyCFunction)_pypdpprocessor_pdpScript, METH_VARARGS, NULL},
+  {"attenuation", (PyCFunction)_pypdpprocessor_attenuation, METH_VARARGS, NULL},
+  {"zphi", (PyCFunction)_pypdpprocessor_zphi, METH_VARARGS, NULL},
+  {NULL, NULL,0,NULL} /* sentinel */
 };
 
 /**
@@ -794,8 +794,8 @@ PyDoc_STRVAR(_pypdpprocessor_doc,
 
 /*@{ Module setup */
 static PyMethodDef functions[] = {
-  {"new", (PyCFunction)_pypdpprocessor_new, 1},
-  {NULL,NULL} /*Sentinel*/
+  {"new", (PyCFunction)_pypdpprocessor_new, METH_VARARGS, NULL},
+  {NULL,NULL,0,NULL} /*Sentinel*/
 };
 
 MOD_INIT(_pdpprocessor)
