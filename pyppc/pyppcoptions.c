@@ -251,10 +251,10 @@ done:
  */
 static struct PyMethodDef _pyppcoptions_methods[] =
 {
-  {"getRadarOptions", (PyCFunction)_pyppcoptions_getRadarOptions, 1},
-  {"exists", (PyCFunction)_pyppcoptions_exists, 1},
-  {"options", (PyCFunction)_pyppcoptions_options, 1},
-  {NULL, NULL} /* sentinel */
+  {"getRadarOptions", (PyCFunction)_pyppcoptions_getRadarOptions, METH_VARARGS, NULL},
+  {"exists", (PyCFunction)_pyppcoptions_exists, METH_VARARGS, NULL},
+  {"options", (PyCFunction)_pyppcoptions_options, METH_VARARGS, NULL},
+  {NULL, NULL,0,NULL} /* sentinel */
 };
 
 /**
@@ -365,8 +365,8 @@ PyDoc_STRVAR(_pyppcoptions_doc,
 /*@{ Module setup */
 static PyMethodDef functions[] = {
   /*{"new", (PyCFunction)_pyppcoptions_new, 1},*/
-  {"load", (PyCFunction)_pyppcoptions_load, 1},
-  {NULL,NULL} /*Sentinel*/
+  {"load", (PyCFunction)_pyppcoptions_load, METH_VARARGS, NULL},
+  {NULL,NULL,0,NULL} /*Sentinel*/
 };
 
 /**
