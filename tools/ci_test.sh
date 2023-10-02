@@ -11,8 +11,7 @@
 #
 # History:  2011-08-20 Created by Anders Henja
 ############################################################
-SCRFILE=`python -c "import os;print(os.path.abspath(\"$0\"))"`
-SCRIPTPATH=`dirname "$SCRFILE"`
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 "$SCRIPTPATH/run_python_script.sh" "${SCRIPTPATH}/../test/pytest/PpcXmlTestSuite.py" "${SCRIPTPATH}/../test/pytest"
 exit $?
