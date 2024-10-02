@@ -60,7 +60,7 @@ clean:
 	$(MAKE) -C pyppc clean
 	$(MAKE) -C config clean
 	#$(MAKE) -C bin clean
-	#$(MAKE) -C doxygen distclean
+	$(MAKE) -C doxygen clean
 	$(MAKE) -C test/pytest clean
 
 .PHONY:distclean
