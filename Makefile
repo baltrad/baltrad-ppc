@@ -69,6 +69,6 @@ distclean:
 	$(MAKE) -C pyppc distclean
 	$(MAKE) -C config distclean
 	#$(MAKE) -C bin distclean
-	#$(MAKE) -C doxygen distclean
+	$(MAKE) -C doxygen distclean
 	$(MAKE) -C test/pytest distclean
 	@\rm -f *~ config.log config.status def.mk
